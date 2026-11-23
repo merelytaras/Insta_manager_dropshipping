@@ -90,6 +90,13 @@ Full JSON exports (secrets/PII stripped) are in `workflows/` (see `workflows/REA
 - Build a "Connect Instagram" login flow; until then add early clients as testers.
 - Sources: developers.facebook.com/docs/instagram-platform/overview, /docs/instagram-platform/app-review.
 
+### Meta App Review progress (2026-11-23)
+- Started a submission (NOT submitted yet). Trimmed to 2 permissions: `instagram_basic`, `instagram_manage_messages` (removed ads_*, content_publish, insights, events; skipped comments and Human Agent for now).
+- App is Published (Live). Sidebar shows Facebook Login for Business (clients need IG linked to a Facebook Page).
+- Privacy policy + data deletion: public Google Doc (published to web, auto-republish). Promises 90-day retention of conversations → TODO: n8n cleanup workflow deleting chat logs older than 90 days. Policy lists n8n, OpenAI, Gemini, Telegram as processors; keep it in sync with reality.
+- Still needed before submit: use-case text + step-by-step (drafted in chat), screen recording of DM → bot reply, test customer Instagram account for reviewers, check Business Verification (Taras has no registered business; maybe sole-proprietor docs).
+- Meta now reviews the WHOLE app on each submission and submissions can't be edited/cancelled once in review.
+
 ## 10. Open TODOs
 1. Wait for shmotkin_lab owner: API key, whether TNF is in EasyDrop, API tariff.
 2. Live retests by Taras (press "Повернути бота" in Telegram first): "вітаю, що є на зиму?", "кросівки на зиму 42", "чоботи 38", "New Balance 9060 Cordura на зиму чи ні?", "нбешки 42", "адіки білі 38", "афки чорні 40". Confirm handoff guard and new nudge texts (order-summary nudge after ~3 h).

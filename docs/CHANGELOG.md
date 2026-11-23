@@ -8,3 +8,6 @@
 
 ## 2026-11-23 (later)
 - Added workflows/ exports (21 shoe workflows, secrets/PII redacted) and corrected workflow names in NOTES.
+
+## 2026-11-23 (evening)
+- Meta App Review started (not submitted): permissions trimmed to basic + manage_messages; privacy policy published.
