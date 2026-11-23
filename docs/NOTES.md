@@ -97,6 +97,17 @@ Full JSON exports (secrets/PII stripped) are in `workflows/` (see `workflows/REA
 - Still needed before submit: use-case text + step-by-step (drafted in chat), screen recording of DM → bot reply, test customer Instagram account for reviewers, check Business Verification (Taras has no registered business; maybe sole-proprietor docs).
 - Meta now reviews the WHOLE app on each submission and submissions can't be edited/cancelled once in review.
 
+### Webhook delivery investigation (2026-11-23) — RESULT: real DM events still NOT delivered
+Facts established (so we don't repeat them):
+- Callback URL (ngrok → probe workflow `4zkNjBAi75zHJnjQ`, path `edr-ig-webhook`) IS verified by Meta (GET verification seen Nov 20 and later).
+- The dashboard **Test** button for `messages` DOES reach the probe (sample payload logged in the webhook-log table) → network path Meta→ngrok→n8n works.
+- `GET /<ig-id>/subscribed_apps` for `spreadingluck` returns our app with `subscribed_fields: ["messages"]` → the account IS subscribed (my "missing subscribed_apps call" hypothesis was WRONG).
+- Token is a Business **System User** token used via graph.facebook.com; it has instagram_basic, instagram_manage_comments, instagram_content_publish, instagram_manage_messages, public_profile granted; `/me/accounts` is empty (no Facebook Page is involved).
+- `spreadingluck` and `merelytaras` both have the Instagram Tester role; App is Published (Live) with Standard Access.
+- Sent a real text DM ("тест 1") from a role-holding account to `spreadingluck`: NO webhook arrived (polling still saw it).
+Open hypotheses (not yet tested): (1) Live mode + Standard Access only delivers webhooks to... nothing real; try switching the app to Development mode and resend; (2) Meta needs Advanced Access (App Review) for real-event delivery; (3) delivery delay.
+Temp workflows used: `PtKRWOrhE9KBGFIj`, `ub3klHmMMUJV6CXn` (diagnostics, unpublished; archive them).
+
 ## 10. Open TODOs
 1. Wait for shmotkin_lab owner: API key, whether TNF is in EasyDrop, API tariff.
 2. Live retests by Taras (press "Повернути бота" in Telegram first): "вітаю, що є на зиму?", "кросівки на зиму 42", "чоботи 38", "New Balance 9060 Cordura на зиму чи ні?", "нбешки 42", "адіки білі 38", "афки чорні 40". Confirm handoff guard and new nudge texts (order-summary nudge after ~3 h).
