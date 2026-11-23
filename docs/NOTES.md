@@ -105,7 +105,10 @@ Facts established (so we don't repeat them):
 - Token is a Business **System User** token used via graph.facebook.com; it has instagram_basic, instagram_manage_comments, instagram_content_publish, instagram_manage_messages, public_profile granted; `/me/accounts` is empty (no Facebook Page is involved).
 - `spreadingluck` and `merelytaras` both have the Instagram Tester role; App is Published (Live) with Standard Access.
 - Sent a real text DM ("тест 1") from a role-holding account to `spreadingluck`: NO webhook arrived (polling still saw it).
-Open hypotheses (not yet tested): (1) Live mode + Standard Access only delivers webhooks to... nothing real; try switching the app to Development mode and resend; (2) Meta needs Advanced Access (App Review) for real-event delivery; (3) delivery delay.
+Test 2: app switched to Development (unpublished) mode, sent "тест 2" from a role-holder → STILL no webhook after ~1 min. So Live-vs-Development mode is NOT the cause.
+Remaining hypotheses: (1) Meta delivers real DM webhooks only with Advanced Access (App Review, blocked by Business Verification); (2) account-level setting in Instagram (Settings → Messages and story replies → Connected tools → Allow access to messages) — unchecked; (3) the webhook is configured under a different product/object than the one real events use. Next ideas if revisited: check (2); recheck after a day; read Meta's webhook troubleshooting docs.
+NOTE: the Instagram account is NOT linked to a Facebook Page and polling/API still work (Instagram-login-style access) — the client onboarding guide that says a linked Facebook Page is required should be re-checked.
+REMINDER: app was switched to Development mode for this test; switch back to Live (Publish page) when done.
 Temp workflows used: `PtKRWOrhE9KBGFIj`, `ub3klHmMMUJV6CXn` (diagnostics, unpublished; archive them).
 
 ## 10. Open TODOs

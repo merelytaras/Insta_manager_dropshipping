@@ -13,3 +13,4 @@
 - Meta App Review started (not submitted): permissions trimmed to basic + manage_messages; privacy policy published.
 
 - Webhook investigation: subscription OK, Test button OK, real DM events not delivered (see NOTES). Business verification (needs legal entity/ФОП) blocks App Review for now.
+- Webhook test 2 (Development mode) also failed to deliver real DM events.
