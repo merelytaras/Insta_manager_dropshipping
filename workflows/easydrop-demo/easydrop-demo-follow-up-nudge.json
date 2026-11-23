@@ -1,0 +1,385 @@
+{
+  "updatedAt": "2026-11-21T16:26:54.488Z",
+  "createdAt": "2026-11-20T20:49:39.308Z",
+  "id": "Jz1HNEjcAJaIJZwp",
+  "name": "EasyDrop demo - Follow-up nudge",
+  "description": "Every 30 min: if the bot asked a question and the customer went quiet for 3-20 hours (inside Instagram 24h window, 10:00-21:00 Kyiv), send one reminder. Skips customers with orders or paused for a manager.",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "951d4a7a-eb5a-4b31-a6c5-e02513dc2e51",
+      "name": "Every 30 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "656791ab-e1df-432e-8bc7-fd4a264af8ed",
+      "name": "Get IG account",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "jQTafqjKvGXLfhuJ"
+        },
+        "operation": "get",
+        "resource": "row",
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "ig_account_id"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "10bdefe5-dd32-493a-9b22-59f8008283a0",
+      "name": "Get chat log",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "2B06l4Xq0NTtxFdg"
+        },
+        "operation": "get",
+        "resource": "row",
+        "returnAll": true
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "65b91817-1c18-4f12-80e7-a40fc44424ba",
+      "name": "Get orders",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        300
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "e5CQ1qnS6daMk9Kq"
+        },
+        "operation": "get",
+        "resource": "row",
+        "returnAll": true
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "380f28ec-025d-4376-bd1f-4ff48e285849",
+      "name": "Get handoffs",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        300
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "JbkN3T4Qea93RNPY"
+        },
+        "operation": "get",
+        "resource": "row",
+        "returnAll": true
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "e08ce52f-4f4b-4e90-a379-8ea92b886b1f",
+      "name": "Pick customers to nudge",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const MIN_H = 3, MAX_H = 20, H = 3600000, MAX_PER_RUN = 5;\nconst DEFAULT_TEXT = 'Вітаю! Ви цікавилися взуттям — підкажіть, чи ще актуально? Якщо потрібна допомога з моделлю чи розміром, напишіть, і я підберу.';\nconst pickText = (reply) => {\n  const s = String(reply || '');\n  if (/підсумок замовлення|підтверджуєте/i.test(s)) {\n    const lines = s.split('\\n').map(x => x.trim()).filter(Boolean);\n    const i = lines.findIndex(x => /підсумок замовлення/i.test(x));\n    const cand = i >= 0 ? (lines[i + 1] || '') : '';\n    const item = /грн/i.test(cand) ? cand : '';\n    return 'Вітаю! ' + (item ? 'Ваше замовлення (' + item + ') ще чекає підтвердження.' : 'Ваше замовлення ще чекає підтвердження.') + ' Підтверджуєте? Якщо потрібно щось змінити (розмір чи адресу), напишіть.';\n  }\n  if (/який розмір|вкажіть розмір|розмір вам потрібен|потрібен розмір|підкажіть розмір/i.test(s)) {\n    const m = s.match(/обрали\\s+(.+?)\\s+[—-]/i);\n    return 'Вітаю! ' + (m ? 'Ви обрали ' + m[1] + '. ' : '') + 'Підкажіть, будь ласка, який розмір вам потрібен, і я перевірю наявність.';\n  }\n  return DEFAULT_TEXT;\n};\nconst now = Date.now();\nconst hourKyiv = Number(new Date().toLocaleString('en-GB', { timeZone: 'Europe/Kyiv', hour: 'numeric', hour12: false }));\nif (hourKyiv < 10 || hourKyiv >= 21) return [];\nconst log = $('Get chat log').all().map(i => i.json).filter(r => r.ts && r.ig_user_id);\nconst last = new Map();\nfor (const r of log) { const p = last.get(r.ig_user_id); if (!p || new Date(r.ts) > new Date(p.ts)) last.set(r.ig_user_id, r); }\nconst orders = $('Get orders').all().map(i => i.json).filter(r => r.ig_user_id && r.created_at);\nconst paused = new Map($('Get handoffs').all().map(i => i.json).filter(r => r.ig_user_id).map(r => [String(r.ig_user_id), r.paused_until]));\nconst out = [];\nfor (const [id, r] of last) {\n  if (out.length >= MAX_PER_RUN) break;\n  if (r.kind !== 'agent') continue;\n  const age = (now - new Date(r.ts).getTime()) / H;\n  if (age < MIN_H || age > MAX_H) continue;\n  if (!String(r.bot_reply || '').includes('?')) continue;\n  if (orders.some(o => String(o.ig_user_id) === String(id) && now - new Date(o.created_at).getTime() < 24 * H)) continue;\n  const p = paused.get(String(id));\n  if (p && new Date(p).getTime() > now) continue;\n  out.push({ json: { customer_id: id, username: r.username || '', text: pickText(r.bot_reply) } });\n}\nreturn out;",
+        "language": "javaScript",
+        "mode": "runOnceForAllItems"
+      }
+    },
+    {
+      "id": "8fbd2c36-2a7b-48ee-a222-dcf651d56f2e",
+      "name": "Send nudge",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1540,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v27.0/' + $('Get IG account').first().json.value + '/messages' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ recipient: { id: $json.ig_user_id }, message: { text: $json.bot_reply } }) }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Instagram Token"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "eec5847c-08c8-49b8-8542-1dc4d36546df",
+      "name": "Log nudge",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        300
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "2B06l4Xq0NTtxFdg"
+        },
+        "resource": "row",
+        "operation": "insert",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ts": "={{ new Date().toISOString() }}",
+            "ig_user_id": "={{ $('Pick customers to nudge').item.json.customer_id }}",
+            "username": "={{ $('Pick customers to nudge').item.json.username }}",
+            "customer_message": "n/a",
+            "had_photo": "no",
+            "kind": "nudge",
+            "bot_reply": "={{ $('Pick customers to nudge').item.json.text }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ts",
+              "displayName": "ts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ig_user_id",
+              "displayName": "ig_user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "username",
+              "displayName": "username",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_message",
+              "displayName": "customer_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "had_photo",
+              "displayName": "had_photo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "kind",
+              "displayName": "kind",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bot_reply",
+              "displayName": "bot_reply",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every 30 minutes": {
+      "main": [
+        [
+          {
+            "node": "Get IG account",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get IG account": {
+      "main": [
+        [
+          {
+            "node": "Get chat log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get chat log": {
+      "main": [
+        [
+          {
+            "node": "Get orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get orders": {
+      "main": [
+        [
+          {
+            "node": "Get handoffs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get handoffs": {
+      "main": [
+        [
+          {
+            "node": "Pick customers to nudge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick customers to nudge": {
+      "main": [
+        [
+          {
+            "node": "Log nudge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log nudge": {
+      "main": [
+        [
+          {
+            "node": "Send nudge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "Europe/Kyiv"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "99a56362-7f35-48f4-9683-ccb85e08872f",
+  "activeVersionId": "99a56362-7f35-48f4-9683-ccb85e08872f",
+  "versionCounter": 3,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-11-20T20:49:39.325Z",
+      "createdAt": "2026-11-20T20:49:39.325Z",
+      "role": "workflow:owner",
+      "workflowId": "Jz1HNEjcAJaIJZwp",
+      "projectId": "kP67zQab1RNBdvlR",
+      "project": {
+        "updatedAt": "2026-07-20T11:29:43.758Z",
+        "createdAt": "2026-07-20T10:53:39.065Z",
+        "id": "kP67zQab1RNBdvlR",
+        "name": "Taras Pul <REDACTED>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "dedbd7d1-138d-4875-9c0b-fe88232968f5"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Context-aware nudge text",
+    "description": "Updated nodes: Pick customers to nudge"
+  }
+}

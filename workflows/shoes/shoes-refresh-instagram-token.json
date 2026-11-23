@@ -1,0 +1,290 @@
+{
+  "updatedAt": "2026-11-17T20:25:38.000Z",
+  "createdAt": "2026-11-17T18:02:22.779Z",
+  "id": "Gq5aJ3cNGvW1Iloj",
+  "name": "Shoes - Refresh Instagram token",
+  "description": null,
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "triggerAtHour": 4
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -464,
+        0
+      ],
+      "id": "16e06a7a-40f1-4357-8ee1-8b3d0cefb522",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "Vz0vEprQYKL2MPQr",
+          "mode": "list",
+          "cachedResultName": "shoes secrets",
+          "cachedResultUrl": "/projects/kP67zQab1RNBdvlR/datatables/Vz0vEprQYKL2MPQr"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "ig_token"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -240,
+        0
+      ],
+      "id": "453fd525-fff6-440e-842b-16ab31d96ffb",
+      "name": "Get row(s)"
+    },
+    {
+      "parameters": {
+        "url": "https://graph.instagram.com/refresh_access_token",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "ig_refresh_token"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $json.value }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -16,
+        0
+      ],
+      "id": "61e3a4ed-067c-4aec-ae71-ba4bed0262be",
+      "name": "Refresh token"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "Vz0vEprQYKL2MPQr",
+          "mode": "list",
+          "cachedResultName": "shoes secrets",
+          "cachedResultUrl": "/projects/kP67zQab1RNBdvlR/datatables/Vz0vEprQYKL2MPQr"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "ig_token"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": "={{ $('Refresh token').first().json.access_token }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "key",
+              "displayName": "key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "value",
+              "displayName": "value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        432,
+        0
+      ],
+      "id": "5e4174a9-100f-4ea4-8703-5de13c5f3826",
+      "name": "save token"
+    },
+    {
+      "parameters": {
+        "chatId": "REDACTED",
+        "text": "=Instagram-токен оновлено ✅ Діє ще {{ Math.round($('Refresh token').first().json.expires_in / 86400) }} днів",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        656,
+        0
+      ],
+      "id": "57422476-79dd-49fd-8ab4-d339b274a23e",
+      "name": "Send a text message",
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "http://localhost:5678/api/v1/credentials/REDACTED",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ data: { name: 'Authorization', value: 'Bearer ' + $json.access_token } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        208,
+        0
+      ],
+      "id": "ced647de-3f78-495c-8840-e16f20db5551",
+      "name": "Update credential",
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "X-N8N-API-KEY"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "Refresh token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refresh token": {
+      "main": [
+        [
+          {
+            "node": "Update credential",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "save token": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update credential": {
+      "main": [
+        [
+          {
+            "node": "save token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "717JIPmKT6PouevB",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "versionId": "762acb56-7ca6-41df-bfa7-fc83d4bb0525",
+  "activeVersionId": null,
+  "versionCounter": 54,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-11-17T18:02:22.789Z",
+      "createdAt": "2026-11-17T18:02:22.789Z",
+      "role": "workflow:owner",
+      "workflowId": "Gq5aJ3cNGvW1Iloj",
+      "projectId": "kP67zQab1RNBdvlR",
+      "project": {
+        "updatedAt": "2026-07-20T11:29:43.758Z",
+        "createdAt": "2026-07-20T10:53:39.065Z",
+        "id": "kP67zQab1RNBdvlR",
+        "name": "Taras Pul <REDACTED>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "dedbd7d1-138d-4875-9c0b-fe88232968f5"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

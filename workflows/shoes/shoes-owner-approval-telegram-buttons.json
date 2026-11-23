@@ -1,0 +1,1608 @@
+{
+  "updatedAt": "2026-11-20T14:57:40.639Z",
+  "createdAt": "2026-11-17T13:15:18.257Z",
+  "id": "m9HYqSX0eLpCeQNk",
+  "name": "Shoes - Owner approval (Telegram buttons)",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "callback_query",
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "b451e720-1066-4a3b-8960-7147d760bfc6",
+      "name": "Owner presses a button",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -624,
+        512
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "action",
+              "value": "={{ $json.callback_query.data.split('|')[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "p2",
+              "name": "order_id",
+              "value": "={{ $json.callback_query.data.split('|')[1] }}",
+              "type": "string"
+            },
+            {
+              "id": "p3",
+              "name": "chat_id",
+              "value": "={{ $json.callback_query.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "p4",
+              "name": "message_id",
+              "value": "={{ $json.callback_query.message.message_id }}",
+              "type": "string"
+            },
+            {
+              "id": "p5",
+              "name": "callback_id",
+              "value": "={{ $json.callback_query.id }}",
+              "type": "string"
+            },
+            {
+              "id": "p6",
+              "name": "now",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ae485a13-593a-41ab-a3cb-3ba746c39262",
+      "name": "Parse button",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "WJbZxgU0QkuAQyLn",
+          "mode": "list",
+          "cachedResultName": "shoes orders",
+          "cachedResultUrl": "/projects/kP67zQab1RNBdvlR/datatables/WJbZxgU0QkuAQyLn"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "=order_id",
+              "condition": "=eq",
+              "keyValue": "={{ $json.order_id }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "2ccb66e0-c329-4678-8790-2c77c87e3bc5",
+      "name": "Get order",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -112,
+        544
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.status }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "pending"
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "e79fec8c-4235-4e7b-ab6b-450d59d90a4c",
+      "name": "Still pending?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        96,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Parse button').first().json.action }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "ok"
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "6b65b6e1-78dc-4b69-95cc-a47d035506e5",
+      "name": "Confirm pressed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        384,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "nz6uzOwp47yueCeS",
+          "mode": "list",
+          "cachedResultName": "shoes catalog",
+          "cachedResultUrl": "/projects/kP67zQab1RNBdvlR/datatables/nz6uzOwp47yueCeS"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "model_id",
+              "keyValue": "={{ $('Get order').first().json.model_id }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "a850ebd1-5be2-4324-882b-25953d38f01f",
+      "name": "Get catalog row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1056,
+        432
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ Number($json['size_' + String($('Get order').first().json.size).replace(/\\D/g, '')] || 0) }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              },
+              "rightValue": 1
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "6a2cad88-6a2a-43e0-9fea-e297a89e29c3",
+      "name": "Pair still in stock?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const order = $('Get order').first().json;\nconst row = $('Get catalog row').first().json;\nconst col = 'size_' + String(order.size).replace(/\\D/g, '');\nconst out = { updated_at: new Date().toISOString() };\nfor (let s = 36; s <= 46; s++) {\n  const k = 'size_' + s;\n  const v = row[k];\n  out[k] = (v === null || v === undefined) ? null : Number(v) - (k === col ? 1 : 0);\n}\nreturn [{ json: out }];"
+      },
+      "id": "3847ab37-7378-4c99-b750-c6687cb01557",
+      "name": "Subtract one pair",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "nz6uzOwp47yueCeS",
+          "mode": "list",
+          "cachedResultName": "shoes catalog",
+          "cachedResultUrl": "/projects/kP67zQab1RNBdvlR/datatables/nz6uzOwp47yueCeS"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "=model_id",
+              "condition": "=eq",
+              "keyValue": "={{ $('Get order').first().json.model_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "size_36": "={{ $json.size_36 }}",
+            "size_37": "={{ $json.size_37 }}",
+            "size_38": "={{ $json.size_38 }}",
+            "size_39": "={{ $json.size_39 }}",
+            "size_40": "={{ $json.size_40 }}",
+            "size_41": "={{ $json.size_41 }}",
+            "size_42": "={{ $json.size_42 }}",
+            "size_43": "={{ $json.size_43 }}",
+            "size_44": "={{ $json.size_44 }}",
+            "size_45": "={{ $json.size_45 }}",
+            "size_46": "={{ $json.size_46 }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "model_id",
+              "displayName": "model_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "gender",
+              "displayName": "gender",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "color",
+              "displayName": "color",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "price_uah",
+              "displayName": "price_uah",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "size_36",
+              "displayName": "size_36",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "size_37",
+              "displayName": "size_37",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "size_38",
+              "displayName": "size_38",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "size_39",
+              "displayName": "size_39",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "size_40",
+              "displayName": "size_40",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "size_41",
+              "displayName": "size_41",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "size_42",
+              "displayName": "size_42",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "size_43",
+              "displayName": "size_43",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "size_44",
+              "displayName": "size_44",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "size_45",
+              "displayName": "size_45",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "size_46",
+              "displayName": "size_46",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "ea15b0b5-ef52-4761-827b-da56abc76946",
+      "name": "Decrease stock",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1776,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "WJbZxgU0QkuAQyLn",
+          "mode": "list",
+          "cachedResultName": "shoes orders",
+          "cachedResultUrl": "/projects/kP67zQab1RNBdvlR/datatables/WJbZxgU0QkuAQyLn"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "=order_id",
+              "condition": "=eq",
+              "keyValue": "={{ $('Parse button').first().json.order_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "confirmed",
+            "decided_at": "={{ $('Parse button').first().json.now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "decided_at",
+              "displayName": "decided_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "28534698-476f-4ac5-bfbe-370af07dd98f",
+      "name": "Mark order confirmed",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2016,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Parse button').first().json.chat_id }}",
+        "messageId": "={{ $('Parse button').first().json.message_id }}",
+        "text": "=✅ Замовлення {{ $('Parse button').first().json.order_id }} підтверджено, залишок розміру зменшено на 1\n{{ String($('Get order').first().json.model_name).replace(/[<>&]/g, ' ') }}, р. {{ $('Get order').first().json.size }} → {{ String($('Get order').first().json.buyer_name).replace(/[<>&]/g, ' ') }}, {{ String($('Get order').first().json.city).replace(/[<>&]/g, ' ') }}, відділення {{ String($('Get order').first().json.np_branch).replace(/[<>&]/g, ' ') }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "68cb89ba-ba6b-455e-8337-0831d6eabe3c",
+      "name": "Edit message: confirmed",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2256,
+        304
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "callback",
+        "queryId": "={{ $('Parse button').first().json.callback_id }}",
+        "additionalFields": {
+          "text": "Підтверджено"
+        }
+      },
+      "id": "c2b9a902-fbce-4a15-b427-ea3fbdcc9897",
+      "name": "Answer button: confirmed",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2496,
+        304
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v27.0/' + $('Get IG account').first().json.value + '/messages' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ recipient: { id: $('Get order').first().json.ig_user_id }, message: { text: 'Дякуємо! Ваше замовлення ' + $('Get order').first().json.order_id + ' підтверджено ✅ Відправимо Новою поштою: ' + $('Get order').first().json.city + ', відділення ' + $('Get order').first().json.np_branch + '. Напишемо, коли посилка буде в дорозі.' } }) }}",
+        "options": {}
+      },
+      "id": "5379372c-93f2-43b6-a4f9-549d12a4f16f",
+      "name": "DM buyer: confirmed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2736,
+        304
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Instagram Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "WJbZxgU0QkuAQyLn",
+          "mode": "list",
+          "cachedResultName": "shoes orders",
+          "cachedResultUrl": "/projects/kP67zQab1RNBdvlR/datatables/WJbZxgU0QkuAQyLn"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "=order_id",
+              "condition": "=eq",
+              "keyValue": "={{ $('Parse button').first().json.order_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "declined",
+            "decided_at": "={{ $('Parse button').first().json.now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "decided_at",
+              "displayName": "decided_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "d43e07fc-e611-40b4-82cd-60c4a9a21a2e",
+      "name": "Mark order declined (no stock)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1536,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Parse button').first().json.chat_id }}",
+        "messageId": "={{ $('Parse button').first().json.message_id }}",
+        "text": "=⚠️ Замовлення {{ $('Parse button').first().json.order_id }} відхилено автоматично: цього розміру вже немає в наявності",
+        "additionalFields": {}
+      },
+      "id": "ad618037-3b89-4bdb-9e5b-71db23124692",
+      "name": "Edit message: no stock",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1776,
+        592
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "callback",
+        "queryId": "={{ $('Parse button').first().json.callback_id }}",
+        "additionalFields": {
+          "text": "Розміру вже немає"
+        }
+      },
+      "id": "b6fb8d2e-7b4f-4b45-ba24-5bbcba4767a6",
+      "name": "Answer button: no stock",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2016,
+        592
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v27.0/' + $('Get IG account').first().json.value + '/messages' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ recipient: { id: $('Get order').first().json.ig_user_id }, message: { text: 'Вибачте, цей розмір щойно закінчився, тому замовлення ' + $('Get order').first().json.order_id + ' оформити не вдалося. Напишіть, будь ласка, і я підберу інший розмір або модель.' } }) }}",
+        "options": {}
+      },
+      "id": "2f2cc5ef-09f8-4df5-b9a3-2db4e2c479bc",
+      "name": "DM buyer: sorry, no stock",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2256,
+        592
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Instagram Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "WJbZxgU0QkuAQyLn",
+          "mode": "list",
+          "cachedResultName": "shoes orders",
+          "cachedResultUrl": "/projects/kP67zQab1RNBdvlR/datatables/WJbZxgU0QkuAQyLn"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "=order_id",
+              "condition": "=eq",
+              "keyValue": "={{ $('Parse button').first().json.order_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "declined",
+            "decided_at": "={{ $('Parse button').first().json.now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "decided_at",
+              "displayName": "decided_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "c044986a-718e-4997-89f3-8e9fdc263afa",
+      "name": "Mark order declined",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        656,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Parse button').first().json.chat_id }}",
+        "messageId": "={{ $('Parse button').first().json.message_id }}",
+        "text": "=❌ Замовлення {{ $('Parse button').first().json.order_id }} відхилено",
+        "additionalFields": {}
+      },
+      "id": "2fcd86b9-f762-4f6f-9250-f8c611242fdf",
+      "name": "Edit message: declined",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        896,
+        736
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "callback",
+        "queryId": "={{ $('Parse button').first().json.callback_id }}",
+        "additionalFields": {
+          "text": "Відхилено"
+        }
+      },
+      "id": "c2c2c340-f99d-41f0-a3a3-268d541ed916",
+      "name": "Answer button: declined",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1136,
+        736
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v27.0/' + $('Get IG account').first().json.value + '/messages' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ recipient: { id: $('Get order').first().json.ig_user_id }, message: { text: 'Вибачте, не вдалося підтвердити замовлення ' + $('Get order').first().json.order_id + '. Напишіть, будь ласка, якщо хочете підібрати інший варіант.' } }) }}",
+        "options": {}
+      },
+      "id": "7b634812-98bf-46f7-b882-2949cb2f50d7",
+      "name": "DM buyer: declined",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1376,
+        736
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Instagram Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "callback",
+        "queryId": "={{ $('Parse button').first().json.callback_id }}",
+        "additionalFields": {
+          "text": "Це замовлення вже оброблено"
+        }
+      },
+      "id": "6d447c9b-398b-42e0-9a95-0b628a1d420a",
+      "name": "Tell owner: already handled",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        384,
+        784
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Owner approval (Telegram buttons)\nTriggered when the owner presses Confirm or Decline under an order message.\nConfirm: re-checks stock, subtracts 1 pair for that model and size, marks the order confirmed, messages the buyer.\nDecline: marks the order declined and messages the buyer.\nDo NOT publish this while another published workflow uses the same Telegram bot trigger (Telegram allows one trigger per bot).",
+        "height": 352,
+        "width": 464,
+        "color": 5
+      },
+      "id": "9ca6ddee-15c6-42a1-bd7d-7f0309a577fd",
+      "name": "Sticky Note 5e0d44e3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        960,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "r1",
+              "leftValue": "={{ $json.action }}",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "resume"
+            }
+          ],
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "b55c4d66-7cbb-4059-9b10-c32f4dfadf04",
+      "name": "Resume bot pressed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -256,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "value": "JbkN3T4Qea93RNPY",
+          "mode": "list",
+          "cachedResultName": "shoes handoff",
+          "cachedResultUrl": "/projects/kP67zQab1RNBdvlR/datatables/JbkN3T4Qea93RNPY"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ig_user_id",
+              "keyValue": "={{ $('Parse button').first().json.order_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d60f4355-25c3-40c4-8b99-REDACTED",
+      "name": "Delete pause row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Parse button').first().json.chat_id }}",
+        "messageId": "={{ $('Parse button').first().json.message_id }}",
+        "text": "=▶️ Бота повернуто для клієнта ID {{ $('Parse button').first().json.order_id }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "7e9f743b-037a-467b-8ec3-866fcb961714",
+      "name": "Edit message: bot resumed",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        0
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "callback",
+        "queryId": "={{ $('Parse button').first().json.callback_id }}",
+        "additionalFields": {
+          "text": "Бота повернуто"
+        }
+      },
+      "id": "ff8c40ba-98d2-4d91-894f-c7f3ac2bd2bc",
+      "name": "Answer button: bot resumed",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        0
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "id": "9da20d72-b201-4f5a-945c-da8c03e20526",
+      "name": "Owner command?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -512,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ !!$json.message || String($json.callback_query?.data || '').startsWith('bot|') }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "b036fdee-deb0-4a2a-8c82-3aed550bda40",
+      "name": "Run owner commands",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        -288,
+        240
+      ],
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "xA4fcf6Dcf392R6W"
+        }
+      }
+    },
+    {
+      "id": "f3e32d71-0c6e-4ce4-970b-aaffdf3b56a9",
+      "name": "Get IG account",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        480
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "jQTafqjKvGXLfhuJ"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "ig_account_id"
+            }
+          ]
+        },
+        "limit": 1,
+        "matchType": "allConditions",
+        "operation": "get"
+      }
+    },
+    {
+      "id": "ee4576e7-1fbb-4c15-8e3f-c8456f167911",
+      "name": "EasyDrop demo order?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -512,
+        640
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "ed1",
+              "leftValue": "={{ String($json.callback_query?.data || '').includes('|EDR-') }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "3ecc9258-7c6d-4277-a5c1-f773d0e45287",
+      "name": "Run EasyDrop demo approval",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -288,
+        720
+      ],
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "LC3Y0X8tV3BpFhZM"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "action",
+              "id": "action",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "order_id",
+              "id": "order_id",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "chat_id",
+              "id": "chat_id",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "message_id",
+              "id": "message_id",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "callback_id",
+              "id": "callback_id",
+              "removed": false,
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "action": "={{ $json.callback_query.data.split('|')[0] }}",
+            "callback_id": "={{ $json.callback_query.id }}",
+            "chat_id": "={{ String($json.callback_query.message.chat.id) }}",
+            "message_id": "={{ String($json.callback_query.message.message_id) }}",
+            "order_id": "={{ $json.callback_query.data.split('|')[1] }}"
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Get order": {
+      "main": [
+        [
+          {
+            "node": "Still pending?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Still pending?": {
+      "main": [
+        [
+          {
+            "node": "Get IG account",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tell owner: already handled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm pressed?": {
+      "main": [
+        [
+          {
+            "node": "Get catalog row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark order declined",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get catalog row": {
+      "main": [
+        [
+          {
+            "node": "Pair still in stock?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pair still in stock?": {
+      "main": [
+        [
+          {
+            "node": "Subtract one pair",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark order declined (no stock)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subtract one pair": {
+      "main": [
+        [
+          {
+            "node": "Decrease stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decrease stock": {
+      "main": [
+        [
+          {
+            "node": "Mark order confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark order confirmed": {
+      "main": [
+        [
+          {
+            "node": "Edit message: confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit message: confirmed": {
+      "main": [
+        [
+          {
+            "node": "Answer button: confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark order declined (no stock)": {
+      "main": [
+        [
+          {
+            "node": "Edit message: no stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit message: no stock": {
+      "main": [
+        [
+          {
+            "node": "Answer button: no stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark order declined": {
+      "main": [
+        [
+          {
+            "node": "Edit message: declined",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit message: declined": {
+      "main": [
+        [
+          {
+            "node": "Answer button: declined",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse button": {
+      "main": [
+        [
+          {
+            "node": "Resume bot pressed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume bot pressed?": {
+      "main": [
+        [
+          {
+            "node": "Delete pause row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete pause row": {
+      "main": [
+        [
+          {
+            "node": "Edit message: bot resumed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit message: bot resumed": {
+      "main": [
+        [
+          {
+            "node": "Answer button: bot resumed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer button: declined": {
+      "main": [
+        [
+          {
+            "node": "DM buyer: declined",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer button: no stock": {
+      "main": [
+        [
+          {
+            "node": "DM buyer: sorry, no stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer button: confirmed": {
+      "main": [
+        [
+          {
+            "node": "DM buyer: confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Owner presses a button": {
+      "main": [
+        [
+          {
+            "node": "Owner command?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Owner command?": {
+      "main": [
+        [
+          {
+            "node": "Run owner commands",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "EasyDrop demo order?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get IG account": {
+      "main": [
+        [
+          {
+            "node": "Confirm pressed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EasyDrop demo order?": {
+      "main": [
+        [
+          {
+            "node": "Run EasyDrop demo approval",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse button",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "717JIPmKT6PouevB",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [
+    {
+      "id": "59eaa89e-2a87-4cfe-a990-c9a95a371e69",
+      "name": "Read the order and check it is pending",
+      "nodeIds": [
+        "ae485a13-593a-41ab-a3cb-3ba746c39262",
+        "b55c4d66-7cbb-4059-9b10-c32f4dfadf04",
+        "2ccb66e0-c329-4678-8790-2c77c87e3bc5",
+        "e79fec8c-4235-4e7b-ab6b-450d59d90a4c",
+        "d60f4355-25c3-40c4-8b99-REDACTED",
+        "7e9f743b-037a-467b-8ec3-866fcb961714",
+        "ff8c40ba-98d2-4d91-894f-c7f3ac2bd2bc"
+      ]
+    }
+  ],
+  "versionId": "9c5c91a1-ff5f-416e-8d96-116775e78a1a",
+  "activeVersionId": "9c5c91a1-ff5f-416e-8d96-116775e78a1a",
+  "versionCounter": 71,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-11-17T13:15:18.265Z",
+      "createdAt": "2026-11-17T13:15:18.265Z",
+      "role": "workflow:owner",
+      "workflowId": "m9HYqSX0eLpCeQNk",
+      "projectId": "kP67zQab1RNBdvlR",
+      "project": {
+        "updatedAt": "2026-07-20T11:29:43.758Z",
+        "createdAt": "2026-07-20T10:53:39.065Z",
+        "id": "kP67zQab1RNBdvlR",
+        "name": "Taras Pul <REDACTED>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "dedbd7d1-138d-4875-9c0b-fe88232968f5"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Route EasyDrop demo orders (EDR-) to demo approval",
+    "description": "Added nodes: EasyDrop demo order?, Run EasyDrop demo approval\nConnections: 3 added, 1 removed"
+  }
+}

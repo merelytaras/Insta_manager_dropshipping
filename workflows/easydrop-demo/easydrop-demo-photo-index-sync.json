@@ -1,0 +1,311 @@
+{
+  "updatedAt": "2026-11-20T22:31:06.381Z",
+  "createdAt": "2026-11-20T18:09:49.133Z",
+  "id": "hozU2zy48wmm9bRJ",
+  "name": "EasyDrop demo - Photo index sync",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "b05f7230-c377-4260-a066-6ff4f9f86f30",
+      "name": "Every 3 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "3285ed16-6c31-47d9-9718-66c0d4312c56",
+      "name": "Get catalog",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "73uDrVHYxs5M5e5V"
+        },
+        "operation": "get",
+        "resource": "row",
+        "returnAll": true
+      }
+    },
+    {
+      "id": "caaf0508-21ce-44b1-85c3-995fc861a4ba",
+      "name": "Get indexed photos",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YV1e41fJ7rUEv9bt"
+        },
+        "operation": "get",
+        "resource": "row",
+        "returnAll": true
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true
+    },
+    {
+      "id": "3254ff51-24bf-4e9c-bd6b-65225a32dbb4",
+      "name": "Fetch missing photos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const indexed = new Set($input.all().map(i => String(i.json.group_id || '')).filter(Boolean));\nconst fresh = (r) => r.model && r.group_id && (Date.now() - new Date(r.updatedAt).getTime() < 3 * 86400000);\nconst todo = $('Get catalog').all().map(i => i.json).filter(r => fresh(r) && !indexed.has(String(r.group_id)) && r.image && !String(r.image).includes('empty_item'));\nfor (let i = todo.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [todo[i], todo[j]] = [todo[j], todo[i]]; }\nconst MAX_BYTES = 8000000, BUDGET = 24000000, CHUNK = 6;\nconst out = [];\nlet tries = 0, total = 0;\nfor (let i = 0; i < todo.length && out.length < 40 && tries < 60 && total < BUDGET; i += CHUNK) {\n  const chunk = todo.slice(i, i + CHUNK);\n  tries += chunk.length;\n  const res = await Promise.all(chunk.map(async (r) => {\n    const url = String(r.image).split(' ')[0];\n    try {\n      const buf = await this.helpers.httpRequest({ url, encoding: 'arraybuffer', json: false, timeout: 20000 });\n      const b = Buffer.from(buf);\n      if (b.length < 2000 || b.length > MAX_BYTES) return null;\n      return { size: b.length, json: { group_id: String(r.group_id), model: r.model, img_url: url, mime: /\\.webp/i.test(url) ? 'image/webp' : 'image/jpeg', b64: b.toString('base64') } };\n    } catch (e) { return null; }\n  }));\n  for (const x of res) { if (x && out.length < 40 && total + x.size <= BUDGET) { out.push({ json: x.json }); total += x.size; } }\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "f8fd7cea-2483-40b3-849d-3629f430d41f",
+      "name": "Build index rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const src = $('Fetch missing photos').all();\nconst out = [];\n$input.all().forEach((it, i) => {\n  const v = it.json.embedding && it.json.embedding.values;\n  const s = src[i] && src[i].json;\n  if (v && s) out.push({ json: { group_id: s.group_id, model: s.model, img_url: s.img_url, vec: JSON.stringify(v.map(x => Math.round(x * 10000) / 10000)) } });\n});\nreturn out;"
+      }
+    },
+    {
+      "id": "55e05e4b-0f83-4f47-8beb-ce484b0ab14f",
+      "name": "Save to index",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        300
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YV1e41fJ7rUEv9bt"
+        },
+        "resource": "row",
+        "operation": "insert",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "group_id": "={{ $json.group_id }}",
+            "model": "={{ $json.model }}",
+            "img_url": "={{ $json.img_url }}",
+            "vec": "={{ $json.vec }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "group_id",
+              "displayName": "group_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "model",
+              "displayName": "model",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "img_url",
+              "displayName": "img_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "vec",
+              "displayName": "vec",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "67f7ca12-33af-4f49-b65a-f2196ad3c099",
+      "name": "Embed photo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        300
+      ],
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "jsonBody": "={{ JSON.stringify({ content: { parts: [{ inline_data: { mime_type: $json.mime, data: $json.b64 } }] }, outputDimensionality: 768 }) }}",
+        "method": "POST",
+        "nodeCredentialType": "googlePalmApi",
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent"
+      },
+      "credentials": {
+        "googlePalmApi": {
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    }
+  ],
+  "connections": {
+    "Get catalog": {
+      "main": [
+        [
+          {
+            "node": "Get indexed photos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get indexed photos": {
+      "main": [
+        [
+          {
+            "node": "Fetch missing photos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build index rows": {
+      "main": [
+        [
+          {
+            "node": "Save to index",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch missing photos": {
+      "main": [
+        [
+          {
+            "node": "Embed photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed photo": {
+      "main": [
+        [
+          {
+            "node": "Build index rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 3 minutes": {
+      "main": [
+        [
+          {
+            "node": "Get catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "saveExecutionProgress": false,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": true,
+    "errorWorkflow": "717JIPmKT6PouevB"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "9e69c1b5-ca6e-4b16-9e7d-45a76f7a9ca2",
+  "activeVersionId": "9e69c1b5-ca6e-4b16-9e7d-45a76f7a9ca2",
+  "versionCounter": 17,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-11-20T18:09:49.167Z",
+      "createdAt": "2026-11-20T18:09:49.167Z",
+      "role": "workflow:owner",
+      "workflowId": "hozU2zy48wmm9bRJ",
+      "projectId": "kP67zQab1RNBdvlR",
+      "project": {
+        "updatedAt": "2026-07-20T11:29:43.758Z",
+        "createdAt": "2026-07-20T10:53:39.065Z",
+        "id": "kP67zQab1RNBdvlR",
+        "name": "Taras Pul <REDACTED>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "dedbd7d1-138d-4875-9c0b-fe88232968f5"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Sync: 24MB budget, chunks of 6",
+    "description": "Updated nodes: Fetch missing photos"
+  }
+}

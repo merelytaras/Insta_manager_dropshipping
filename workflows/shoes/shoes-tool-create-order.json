@@ -1,0 +1,794 @@
+{
+  "updatedAt": "2026-11-18T18:24:29.695Z",
+  "createdAt": "2026-11-17T13:14:02.841Z",
+  "id": "1TtwHeKw1ccCbxCG",
+  "name": "Shoes - Tool - create order",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "model_id"
+            },
+            {
+              "name": "size"
+            },
+            {
+              "name": "buyer_name"
+            },
+            {
+              "name": "buyer_phone"
+            },
+            {
+              "name": "city"
+            },
+            {
+              "name": "np_branch"
+            },
+            {
+              "name": "ig_user_id"
+            },
+            {
+              "name": "context"
+            },
+            {
+              "name": "customer_message"
+            }
+          ]
+        }
+      },
+      "id": "e8bc9ca1-d968-4f4f-9e5c-c4332b4f5ca8",
+      "name": "Order request",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -272,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "order_id",
+              "value": "={{ 'ORD-' + $now.toFormat('yyMMdd-HHmmss') }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "size_col",
+              "value": "={{ 'size_' + String($json.size).replace(/\\D/g, '') }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "destination",
+              "value": "={{ $json.city + ', відділення НП ' + $json.np_branch }}",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "now",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "95d5403b-0d5c-480c-8793-c8bcc18f7c47",
+      "name": "Prepare",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "nz6uzOwp47yueCeS",
+          "mode": "list",
+          "cachedResultName": "shoes catalog",
+          "cachedResultUrl": "/projects/kP67zQab1RNBdvlR/datatables/nz6uzOwp47yueCeS"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "model_id",
+              "keyValue": "={{ $json.model_id }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "bd5fb353-9867-479e-979c-61dfbf3af2c7",
+      "name": "Get catalog row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        336,
+        240
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ Number($json[$('Prepare').first().json.size_col] || 0) }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              },
+              "rightValue": 1
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "1d14b083-f7fd-4b87-b584-3613e41b045f",
+      "name": "In stock?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "WJbZxgU0QkuAQyLn",
+          "mode": "list",
+          "cachedResultName": "shoes orders",
+          "cachedResultUrl": "/projects/kP67zQab1RNBdvlR/datatables/WJbZxgU0QkuAQyLn"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "order_id": "={{ $('Prepare').first().json.order_id }}",
+            "created_at": "={{ $('Prepare').first().json.now }}",
+            "status": "pending",
+            "model_id": "={{ $('Prepare').first().json.model_id }}",
+            "model_name": "={{ $('Get catalog row').first().json.name }}",
+            "size": "={{ $('Prepare').first().json.size }}",
+            "price_uah": "={{ Number($('Get catalog row').first().json.price_uah) }}",
+            "buyer_name": "={{ $('Prepare').first().json.buyer_name }}",
+            "city": "={{ $('Prepare').first().json.city }}",
+            "np_branch": "={{ $('Prepare').first().json.np_branch }}",
+            "destination": "={{ $('Prepare').first().json.destination }}",
+            "ig_user_id": "={{ $('Prepare').first().json.ig_user_id }}",
+            "buyers_phone": "={{ $('Prepare').first().json.buyer_phone }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "model_id",
+              "displayName": "model_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "model_name",
+              "displayName": "model_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "size",
+              "displayName": "size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "price_uah",
+              "displayName": "price_uah",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "buyer_name",
+              "displayName": "buyer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "buyers_phone",
+              "displayName": "buyers_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "np_branch",
+              "displayName": "np_branch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "destination",
+              "displayName": "destination",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ig_user_id",
+              "displayName": "ig_user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "decided_at",
+              "displayName": "decided_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "5029251f-e63f-4aaf-821a-d40837653f2f",
+      "name": "Create order row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        784,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Get owner chat').first().json.value }}",
+        "text": "=🛒 Нове замовлення {{ $('Prepare').first().json.order_id }}\n\nТовар: {{ String($('Get catalog row').first().json.name).replace(/[<>&]/g, ' ') }} ({{ String($('Get catalog row').first().json.color).replace(/[<>&]/g, ' ') }}), розмір {{ $('Prepare').first().json.size }} — {{ $('Get catalog row').first().json.price_uah }} грн\nБуло цього розміру: {{ $('Get catalog row').first().json[$('Prepare').first().json.size_col] }} шт.\nПокупець: {{ String($('Prepare').first().json.buyer_name).replace(/[<>&]/g, ' ') }}\nТелефон: {{ String($('Prepare').first().json.buyer_phone).replace(/[<>&]/g, ' ') }}\nДоставка: {{ String($('Prepare').first().json.destination).replace(/[<>&]/g, ' ') }}\nInstagram: {{ ($('Get username').first().json.username ? '<a href=\"https://instagram.com/' + $('Get username').first().json.username + '\">@' + $('Get username').first().json.username + '</a>' : 'нік невідомий') }}\nInstagram ID: {{ $('Prepare').first().json.ig_user_id }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "✅ Підтвердити",
+                    "additionalFields": {
+                      "callback_data": "={{ 'ok|' + $('Prepare').first().json.order_id }}"
+                    }
+                  },
+                  {
+                    "text": "❌ Відхилити",
+                    "additionalFields": {
+                      "callback_data": "={{ 'no|' + $('Prepare').first().json.order_id }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "19ae8eb9-5411-4f9d-8936-fd1ee85fa7e3",
+      "name": "Notify owner",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        144
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "o1",
+              "name": "ok",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "o2",
+              "name": "order_id",
+              "value": "={{ $('Prepare').first().json.order_id }}",
+              "type": "string"
+            },
+            {
+              "id": "o3",
+              "name": "note",
+              "value": "Замовлення створено і чекає підтвердження менеджера. Скажи клієнту, що менеджер підтвердить замовлення і напише найближчим часом.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4e354792-43b8-4efb-955d-356e11757efa",
+      "name": "OK result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1264,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "n1",
+              "name": "ok",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "n2",
+              "name": "note",
+              "value": "Такого розміру цієї моделі немає в наявності (або модель не знайдено). Вибачся і запропонуй найближчі розміри цієї моделі або схожі моделі, які є в наявності.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "26ba32c9-dfeb-4c12-a002-28102c1f3ee1",
+      "name": "Not available",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        784,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Tool: create order\nCalled by the AI Agent as a tool (create_order).\nChecks stock for the model and size, saves a pending order, and sends the owner Telegram buttons. Stock is reduced only when the owner presses Confirm (see Owner approval workflow).",
+        "height": 224,
+        "width": 608,
+        "color": 4
+      },
+      "id": "95054016-923d-418f-9175-e719778ec693",
+      "name": "Sticky Note b9737d36",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Get owner chat').first().json.value }}",
+        "text": "=Нове замовлення {{ $('Prepare').first().json.order_id }}: повне сповіщення не вдалося надіслати. Дивіться таблицю shoes orders у n8n.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "fe33ea4d-22a7-4588-9af7-c2a3c39c0968",
+      "name": "Owner alert fallback",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1280,
+        368
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "65c31a45-b624-4772-979d-65ce073888ab",
+              "leftValue": "={{ (() => { const ctx = String($json.context || ''); const i = ctx.lastIndexOf('Магазин:'); const lastShop = i === -1 ? '' : ctx.slice(i); return /підтверджу/i.test(lastShop) && /^(так|да|ок|окей|ага|давайте|підтверджую|вірно)/i.test(String($json.customer_message || '').trim()); })() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        -112,
+        336
+      ],
+      "id": "46a16aa2-09a2-4b39-bd05-6a5226ce644c",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "01dde18c-65d0-4579-ad49-4c622c72a0ae",
+              "name": "ok",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "be363750-2f3c-4b44-aeaf-bd2a53b665f0",
+              "name": "note",
+              "value": "Спочатку покажи клієнту підсумок замовлення, запитай «Підтверджуєте?» і дочекайся відповіді «так»",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        112,
+        400
+      ],
+      "id": "d5278011-129c-4e0e-a38d-736f2993c2ed",
+      "name": "Edit Fields"
+    },
+    {
+      "id": "952db0f0-313c-453b-a251-668d085c3253",
+      "name": "Get username",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        904,
+        144
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "t7PkfUtoPYsNYuu5"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "ig_user_id",
+              "keyValue": "={{ $('Prepare').first().json.ig_user_id }}"
+            }
+          ]
+        },
+        "limit": 1,
+        "matchType": "allConditions",
+        "operation": "get",
+        "resource": "row"
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "97bfb5a3-67b2-425d-8bd7-fa5f87929cca",
+      "name": "Get owner chat",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        40
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "shoes settings",
+          "mode": "list",
+          "value": "jQTafqjKvGXLfhuJ"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "owner_chat_id"
+            }
+          ]
+        },
+        "limit": 1,
+        "matchType": "allConditions",
+        "operation": "get"
+      }
+    }
+  ],
+  "connections": {
+    "Prepare": {
+      "main": [
+        [
+          {
+            "node": "Get catalog row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get catalog row": {
+      "main": [
+        [
+          {
+            "node": "In stock?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "In stock?": {
+      "main": [
+        [
+          {
+            "node": "Create order row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Not available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify owner": {
+      "main": [
+        [
+          {
+            "node": "OK result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Owner alert fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Owner alert fallback": {
+      "main": [
+        [
+          {
+            "node": "OK result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order request": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Prepare",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create order row": {
+      "main": [
+        [
+          {
+            "node": "Get username",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get username": {
+      "main": [
+        [
+          {
+            "node": "Get owner chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get owner chat": {
+      "main": [
+        [
+          {
+            "node": "Notify owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "717JIPmKT6PouevB",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "45c21420-79c7-4d0c-a29b-f28688abc657",
+  "activeVersionId": null,
+  "versionCounter": 43,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-11-17T13:14:02.849Z",
+      "createdAt": "2026-11-17T13:14:02.849Z",
+      "role": "workflow:owner",
+      "workflowId": "1TtwHeKw1ccCbxCG",
+      "projectId": "kP67zQab1RNBdvlR",
+      "project": {
+        "updatedAt": "2026-07-20T11:29:43.758Z",
+        "createdAt": "2026-07-20T10:53:39.065Z",
+        "id": "kP67zQab1RNBdvlR",
+        "name": "Taras Pul <REDACTED>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "dedbd7d1-138d-4875-9c0b-fe88232968f5"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Owner chat ID from settings",
+    "description": "Added nodes: Get owner chat\nUpdated nodes: Notify owner, Owner alert fallback\nConnections: 2 added, 1 removed"
+  }
+}

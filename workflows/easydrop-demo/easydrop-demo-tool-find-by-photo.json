@@ -1,0 +1,411 @@
+{
+  "updatedAt": "2026-11-23T14:29:29.280Z",
+  "createdAt": "2026-11-20T16:42:29.334Z",
+  "id": "bAz0D5BejaM5Qz7i",
+  "name": "EasyDrop demo - Tool - find by photo",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "image_url"
+            },
+            {
+              "name": "hint"
+            }
+          ]
+        }
+      },
+      "id": "35e70e9c-5e05-4b26-b473-0c2f8719bd18",
+      "name": "Photo request",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -128,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "73uDrVHYxs5M5e5V"
+        },
+        "returnAll": true
+      },
+      "id": "1a775a85-919a-468b-9b16-464758b095df",
+      "name": "Get cached catalog",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        304
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const q = $('Embed customer photo').first().json.embedding && $('Embed customer photo').first().json.embedding.values;\nconst img = $('Photo request').first().json.image_url;\nif (!q) return [{ json: { desc: {}, candidates: [], imageUrls: img, list: '', found: 0, error: 'embed failed' } }];\nconst fresh = (r) => r.model && (Date.now() - new Date(r.updatedAt).getTime() < 3 * 86400000);\nconst cat = new Map();\nfor (const i of $input.all()) { const r = i.json; if (fresh(r)) cat.set(String(r.group_id), r); }\nconst dot = (a, b) => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; };\nconst nq = Math.sqrt(dot(q, q));\nconst scored = [];\nfor (const it of $('Get photo index').all()) {\n  const row = it.json; const c = cat.get(String(row.group_id)); if (!c) continue;\n  let v; try { v = JSON.parse(row.vec); } catch (e) { continue; }\n  scored.push({ c, s: dot(q, v) / (nq * Math.sqrt(dot(v, v))), img: row.img_url });\n}\nscored.sort((a, b) => b.s - a.s);\nconst isGtx = (c) => /gore[\\s-]*tex/i.test(String(c.model || ''));\nconst top = scored.slice(0, 6);\nconst have = new Set(top.map(x => String(x.c.group_id)));\nconst extra = scored.filter(x => isGtx(x.c) && x.c.in_stock_count > 0 && !have.has(String(x.c.group_id))).slice(0, 3);\nconst all = top.concat(extra);\nconst imageUrls = [img].concat(all.map(x => x.img)).join(',');\nconst list = all.map((x, i) => 'Фото ' + (i + 2) + ' = кандидат ' + (i + 1) + ': ' + x.c.model).join('\\n');\nreturn [{ json: { desc: {}, candidates: all.map(x => x.c), sims: all.map(x => x.s.toFixed(3)), imageUrls, list, found: all.length, indexed: scored.length } }];"
+      },
+      "id": "27ad1a8c-48df-4320-b796-cf4a6a9aef98",
+      "name": "Shortlist candidates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.found > 0 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "02fa6c1e-9572-40e9-b716-dca6c10444be",
+      "name": "Any candidates?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const sl = $('Shortlist candidates').first().json;\nconst d = $input.first().json;\nconst raw = (d.content?.parts || []).map(p => p.text || '').join('') || d.text || '';\nlet items = [];\nlet custColors = '', custBrand = '', custWP = false, custWarm = false;\ntry { const m = String(raw).replace(/```json|```/g, '').match(/\\{[\\s\\S]*\\}/); const j = JSON.parse(m ? m[0] : raw); items = Array.isArray(j.items) ? j.items : []; custColors = j.customer_colors || ''; custBrand = String(j.customer_brand || '').trim(); custWP = j.customer_waterproof === true; custWarm = j.customer_warm === true; } catch (e) { items = []; }\nlet hint = ''; try { hint = String($('Photo request').first().json.hint || ''); } catch (e) {}\nconst sm = hint.match(/(?<![0-9])(3[4-9]|4[0-9])(?![0-9])/);\nconst wantSize = sm ? sm[1] : '';\nconst hasSize = (c) => wantSize && String(c.sizes_in_stock || '').split(/[^0-9]+/).includes(wantSize);\nconst isGtx = (c) => /gore[\\s-]*tex/i.test(String(c.model || ''));\nlet rows = items.map(x => ({ c: sl.candidates[Number(x.n) - 1], n: Number(x.n), x })).filter(o => o.c).map(o => {\n  const verdict = (o.x.same_model === true && o.x.same_colorway === true) ? 'exact' : (o.x.same_model === true ? 'same_model_other_color' : (o.x.similar_style === true ? 'similar' : 'different'));\n  return { c: o.c, n: o.n, x: Object.assign({}, o.x, { verdict }) };\n}).filter(o => o.x.verdict !== 'different');\nif (custWP && rows.some(o => isGtx(o.c))) rows = rows.filter(o => isGtx(o.c) || o.x.verdict !== 'similar');\nconst order = { exact: 0, same_model_other_color: 1, similar: 2 };\nrows.sort((a, b) => order[a.x.verdict] - order[b.x.verdict] || (custWP ? Number(isGtx(b.c)) - Number(isGtx(a.c)) : 0) || (Number(!!hasSize(b.c)) - Number(!!hasSize(a.c))) || (Number(b.c.in_stock_count > 0) - Number(a.c.in_stock_count > 0)) || (a.n - b.n));\nconst label = { exact: 'ВІРОГІДНИЙ ЗБІГ (схожа модель і колір)', same_model_other_color: 'ТА САМА МОДЕЛЬ, ІНШИЙ КОЛІР', similar: 'СХОЖА, АЛЕ ІНША МОДЕЛЬ' };\nconst fmt = (o) => label[o.x.verdict] + ': ' + o.c.model + ' [model_id ' + o.c.group_id + '] | колір: ' + (o.x.color || 'невідомо') + ' | ' + o.c.price + ' грн | є розміри: ' + (o.c.sizes_in_stock || 'немає в наявності') + (wantSize ? (hasSize(o.c) ? ' | розмір ' + wantSize + ' Є' : ' | розміру ' + wantSize + ' немає') : '') + (isGtx(o.c) ? ' | водостійка (Gore-Tex)' : '');\nconst top = rows.slice(0, 6);\nlet brandMissing = false;\nif (custBrand && !/^(невідомо|unknown|none|n\\/a|-)$/i.test(custBrand)) {\n  const b = custBrand.toLowerCase();\n  brandMissing = !$('Get cached catalog').all().some(i => String(i.json.model || '').toLowerCase().includes(b));\n}\nconst seen = 'Що бачу на фото клієнта: ' + (custBrand ? 'бренд ' + custBrand + ', ' : '') + 'колір: ' + (custColors || 'невідомо') + '.' + (custWP ? ' Клієнт шукає ВОДОСТІЙКЕ взуття (є позначка на фото).' : '') + (custWarm ? ' Є позначка «термо» (утеплене).' : '') + (brandMissing ? ' УВАГА: бренду «' + custBrand + '» у каталозі немає взагалі.' : '');\nconst brandRule = brandMissing ? ' 5) ОБОВ’ЯЗКОВО спершу чесно скажи клієнту, що бренду «' + custBrand + '» у каталозі немає, і лише після цього запропонуй найближчі схожі моделі (бажано з потрібним розміром).' : '';\nconst wpRule = custWP ? ' 6) Клієнт шукає водостійке: водостійкими вважай ЛИШЕ моделі з позначкою «водостійка (Gore-Tex)», обов’язково скажи про це; для решти скажи, що водостійкість підтвердити не можу.' : '';\nconst warmRule = custWarm ? ' 7) Про утеплення нічого не стверджуй: дані про утеплювач у каталозі відсутні, їх уточнить менеджер.' : '';\nconst rule = '\\nПРАВИЛА ПОДАЧІ: Розпізнавання за фото не гарантує точності, тому НІКОЛИ не стверджуй, що це саме та модель. 1) Якщо є ВІРОГІДНІ ЗБІГИ — пропонуй насамперед їх (до 2–3): надішли фото кожної (send_photo), назви назву, колір, ціну і розміри в наявності, і спитай «Це ця модель?». 2) Якщо клієнтського розміру немає у вірогідного збігу — скажи це чесно, пропонуй інші розміри цієї моделі, потім ТУ САМУ МОДЕЛЬ ІНШОГО КОЛЬОРУ з потрібним розміром. 3) Лише якщо і тієї ж моделі немає взагалі — запропонуй СХОЖІ (у списку вже першими йдуть ті, де є потрібний розмір), чітко сказавши, що це інші моделі. 4) Нічого не вигадуй, використовуй лише цей список. Ніколи не показуй клієнту model_id.' + brandRule + wpRule + warmRule;\nconst none = 'Не вдалося надійно знайти цю модель у каталозі. ' + seen + ' Чесно скажи клієнту, що не можеш однозначно визначити модель, і попроси назву моделі або чіткіше фото; запропонуй передати менеджеру.';\nconst result = top.length ? seen + '\\n' + top.map(fmt).join('\\n') + rule : none;\nreturn [{ json: { result } }];"
+      },
+      "id": "4f1d89a0-0d3c-4d6c-b0dd-1cf2a5ae9388",
+      "name": "Format matches",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "result",
+              "type": "string",
+              "value": "={{ 'Не вдалося визначити модель за фото (розпізнано: ' + [$json.desc.brand, $json.desc.model].filter(Boolean).join(' ') + '). Чесно скажи клієнту, що не бачиш, яка це модель, і попроси назву моделі або інше фото; запропонуй передати менеджеру. Нічого не вигадуй.' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6af0337b-58d1-487e-befc-acb899c02101",
+      "name": "No candidates result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1104,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const url = $('Photo request').first().json.image_url;\nlet b64 = '';\ntry {\n  const buf = await this.helpers.httpRequest({ url, encoding: 'arraybuffer', json: false });\n  b64 = Buffer.from(buf).toString('base64');\n} catch (e) {}\nreturn [{ json: { mime: 'image/jpeg', b64 } }];"
+      },
+      "id": "9f1ea2ce-04b5-4d01-af1e-ff4aa0e9cf4e",
+      "name": "Fetch customer photo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googlePalmApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ content: { parts: [{ inline_data: { mime_type: $json.mime, data: $json.b64 } }] }, outputDimensionality: 768 }) }}",
+        "options": {}
+      },
+      "id": "00267b50-8cce-4c0f-adc1-0a3ea30de741",
+      "name": "Embed customer photo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        176
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "credentials": {
+        "googlePalmApi": {
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YV1e41fJ7rUEv9bt"
+        },
+        "returnAll": true
+      },
+      "id": "103cda64-fe46-44b6-86f5-24449a49c880",
+      "name": "Get photo index",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        288,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => { const cust = $('Fetch customer photo').first().json; const urls = String($json.imageUrls).split(','); const prompt = 'Фото 1 — взуття, яке хоче клієнт (може бути скріншот допису з накладеним текстом). Далі фото кандидатів з каталогу в порядку:\\n' + $json.list + '\\n\\nСпочатку опиши колір взуття на фото 1 (основні кольори англійською). Якщо бренд видно на самому взутті, на логотипі чи в тексті допису, вкажи його в customer_brand (інакше порожній рядок; не вгадуй). ПРОЧИТАЙ накладений на фото текст і ярлики: customer_waterproof=true, якщо є ознаки водостійкості («водостійкі», «водонепроникні», waterproof, GORE-TEX); customer_warm=true, якщо є «термо», «утеплені», хутро; інакше false. Ігноруй руки й тло. Потім для КОЖНОГО кандидата окремо відповіді на два питання: (a) same_model — чи це ТА САМА модель взуття, що на фото 1 (порівнюй конструкцію: форму підошви, шнурівку, язик, логотипи, панелі, матеріал, не колір); (b) same_colorway — чи абсолютно такий же колір і розміщення кольорів (наприклад, білий ≠ чорний ≠ бежевий). Будь суворим: сумніваєшся — false. Якщо жодна модель не схожа, поверни всім false. similar_style=true лише якщо силует і тип взуття (тип, висота, підошва) реально близькі. Поверни ЛИШЕ JSON: {\"customer_brand\":\"\",\"customer_colors\":\"...\",\"customer_waterproof\":false,\"customer_warm\":false,\"items\":[{\"n\":1,\"same_model\":true,\"same_colorway\":false,\"color\":\"колір кандидата українською\",\"similar_style\":true}]}'; const content = [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: cust.b64 ? 'data:image/jpeg;base64,' + cust.b64 : urls[0] } }]; urls.slice(1).forEach(u => content.push({ type: 'image_url', image_url: { url: u } })); return JSON.stringify({ model: 'gpt-6.1-terra', messages: [{ role: 'user', content }], max_completion_tokens: 4000, response_format: { type: 'json_object' } }); })() }}",
+        "options": {}
+      },
+      "id": "bf2fb3bb-84f8-40bc-a693-3c459364c244",
+      "name": "Compare with OpenAI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1104,
+        208
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "openAiApi": {
+          "name": "OpenAI account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nconst t = (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content) || '';\nreturn [{ json: { content: { parts: [{ text: t }] } } }];"
+      },
+      "id": "66284c97-722c-4831-a312-194f9ea59e33",
+      "name": "Adapt OpenAI reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = String($input.first().json.result || '')\n  .replace('надішли фото кожної (send_photo)', 'надішли фото ЛИШЕ однієї, найвірогіднішої моделі (send_photo один раз); інші кольори чи моделі опиши ТЕКСТОМ (колір і розміри) і запропонуй показати фото')\n  .replace('Ніколи не показуй клієнту model_id.', 'Одразу після назви кожної моделі в своїй відповіді пиши тег [model_id N] — він видаляється автоматично, клієнт його не бачить.');\nreturn [{ json: { result: r } }];"
+      },
+      "id": "771a4eb4-aba6-4acd-8e15-9d1c06b5a3ba",
+      "name": "Adjust rules",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        208
+      ]
+    }
+  ],
+  "connections": {
+    "Get cached catalog": {
+      "main": [
+        [
+          {
+            "node": "Shortlist candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shortlist candidates": {
+      "main": [
+        [
+          {
+            "node": "Any candidates?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any candidates?": {
+      "main": [
+        [
+          {
+            "node": "Compare with OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No candidates result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Photo request": {
+      "main": [
+        [
+          {
+            "node": "Fetch customer photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch customer photo": {
+      "main": [
+        [
+          {
+            "node": "Embed customer photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed customer photo": {
+      "main": [
+        [
+          {
+            "node": "Get photo index",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get photo index": {
+      "main": [
+        [
+          {
+            "node": "Get cached catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare with OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Adapt OpenAI reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adapt OpenAI reply": {
+      "main": [
+        [
+          {
+            "node": "Format matches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format matches": {
+      "main": [
+        [
+          {
+            "node": "Adjust rules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "2d5ef526-1808-4722-9c3f-da0089b34d34",
+  "activeVersionId": "2d5ef526-1808-4722-9c3f-da0089b34d34",
+  "versionCounter": 25,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-11-20T16:42:29.344Z",
+      "createdAt": "2026-11-20T16:42:29.344Z",
+      "role": "workflow:owner",
+      "workflowId": "bAz0D5BejaM5Qz7i",
+      "projectId": "kP67zQab1RNBdvlR",
+      "project": {
+        "updatedAt": "2026-07-20T11:29:43.758Z",
+        "createdAt": "2026-07-20T10:53:39.065Z",
+        "id": "kP67zQab1RNBdvlR",
+        "name": "Taras Pul <REDACTED>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "dedbd7d1-138d-4875-9c0b-fe88232968f5"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Version 2d5ef526",
+    "description": ""
+  }
+}

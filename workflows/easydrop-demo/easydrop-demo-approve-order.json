@@ -1,0 +1,579 @@
+{
+  "updatedAt": "2026-11-20T14:56:49.334Z",
+  "createdAt": "2026-11-20T14:56:43.057Z",
+  "id": "LC3Y0X8tV3BpFhZM",
+  "name": "EasyDrop demo - Approve order",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "5ea20d7c-d4fd-484e-8b89-7e097f10935f",
+      "name": "Button pressed",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "action"
+            },
+            {
+              "name": "order_id"
+            },
+            {
+              "name": "chat_id"
+            },
+            {
+              "name": "message_id"
+            },
+            {
+              "name": "callback_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "675879cc-de05-486c-8036-efda2bb3eb32",
+      "name": "Get order",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "e5CQ1qnS6daMk9Kq"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "order_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Button pressed').first().json.order_id }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "87c9546a-ab68-4517-9146-5e5b0bccf10c",
+      "name": "Still pending?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.status }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "pending"
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true
+      }
+    },
+    {
+      "id": "3696af84-6c80-41ea-9586-3f67a0580cd1",
+      "name": "Get IG account",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        200
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "jQTafqjKvGXLfhuJ"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "ig_account_id"
+            }
+          ]
+        },
+        "limit": 1
+      }
+    },
+    {
+      "id": "43e0a4a5-40ff-47b5-8978-ce56c6a8edf9",
+      "name": "Confirm pressed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Button pressed').first().json.action }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "ok"
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true
+      }
+    },
+    {
+      "id": "328c143b-89b3-4a73-bdd0-565d2e3d1273",
+      "name": "Mark order confirmed",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        100
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "e5CQ1qnS6daMk9Kq"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "order_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Button pressed').first().json.order_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "value": {
+            "status": "confirmed",
+            "decided_at": "={{ new Date().toISOString() }}"
+          },
+          "schema": []
+        }
+      }
+    },
+    {
+      "id": "26821be1-cc89-45db-8837-4dd0aa57b726",
+      "name": "Edit message: confirmed",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1320,
+        100
+      ],
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Button pressed').first().json.chat_id }}",
+        "messageId": "={{ $('Button pressed').first().json.message_id }}",
+        "text": "=✅ Замовлення {{ $('Button pressed').first().json.order_id }} підтверджено\n{{ String($('Get order').first().json.model_name).replace(/[<>&]/g, ' ') }}, р. {{ $('Get order').first().json.size }} → {{ String($('Get order').first().json.buyer_name).replace(/[<>&]/g, ' ') }}, {{ String($('Get order').first().json.city).replace(/[<>&]/g, ' ') }}, відділення {{ String($('Get order').first().json.np_branch).replace(/[<>&]/g, ' ') }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "id": "26519647-bd41-4fb6-a4fa-d4e08d8962f6",
+      "name": "Answer button: confirmed",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1540,
+        100
+      ],
+      "parameters": {
+        "resource": "callback",
+        "queryId": "={{ $('Button pressed').first().json.callback_id }}",
+        "additionalFields": {
+          "text": "Підтверджено"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "id": "d2565d87-5391-48be-900c-e611751d8ec0",
+      "name": "DM buyer: confirmed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1760,
+        100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v27.0/' + $('Get IG account').first().json.value + '/messages' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ recipient: { id: $('Get order').first().json.ig_user_id }, message: { text: 'Дякуємо! Ваше замовлення ' + $('Get order').first().json.order_id + ' підтверджено ✅ Відправимо Новою поштою: ' + $('Get order').first().json.city + ', відділення ' + $('Get order').first().json.np_branch + '. Напишемо, коли посилка буде в дорозі.' } }) }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Instagram Token"
+        }
+      }
+    },
+    {
+      "id": "1f933eae-f4ad-4dee-b01b-abbf5e22d313",
+      "name": "Mark order declined",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        320
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "e5CQ1qnS6daMk9Kq"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "order_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Button pressed').first().json.order_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "value": {
+            "status": "declined",
+            "decided_at": "={{ new Date().toISOString() }}"
+          },
+          "schema": []
+        }
+      }
+    },
+    {
+      "id": "0af1bcc4-9085-48a3-b345-e2462adcb723",
+      "name": "Edit message: declined",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1320,
+        320
+      ],
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Button pressed').first().json.chat_id }}",
+        "messageId": "={{ $('Button pressed').first().json.message_id }}",
+        "text": "=❌ Замовлення {{ $('Button pressed').first().json.order_id }} відхилено",
+        "additionalFields": {}
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "id": "d8ef150c-08f9-4445-98df-56b8d01355c3",
+      "name": "Answer button: declined",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1540,
+        320
+      ],
+      "parameters": {
+        "resource": "callback",
+        "queryId": "={{ $('Button pressed').first().json.callback_id }}",
+        "additionalFields": {
+          "text": "Відхилено"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "id": "c1fc0100-c419-4a86-b8b8-10385cc6ba64",
+      "name": "DM buyer: declined",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1760,
+        320
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v27.0/' + $('Get IG account').first().json.value + '/messages' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ recipient: { id: $('Get order').first().json.ig_user_id }, message: { text: 'Вибачте, не вдалося підтвердити замовлення ' + $('Get order').first().json.order_id + '. Напишіть, будь ласка, якщо хочете підібрати інший варіант.' } }) }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Instagram Token"
+        }
+      }
+    },
+    {
+      "id": "98ca9441-e246-4e12-98f9-c2237509a204",
+      "name": "Tell owner: already handled",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        660,
+        460
+      ],
+      "parameters": {
+        "resource": "callback",
+        "queryId": "={{ $('Button pressed').first().json.callback_id }}",
+        "additionalFields": {
+          "text": "Це замовлення вже оброблено"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Button pressed": {
+      "main": [
+        [
+          {
+            "node": "Get order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get order": {
+      "main": [
+        [
+          {
+            "node": "Still pending?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Still pending?": {
+      "main": [
+        [
+          {
+            "node": "Get IG account",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tell owner: already handled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get IG account": {
+      "main": [
+        [
+          {
+            "node": "Confirm pressed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm pressed?": {
+      "main": [
+        [
+          {
+            "node": "Mark order confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark order declined",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark order confirmed": {
+      "main": [
+        [
+          {
+            "node": "Edit message: confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit message: confirmed": {
+      "main": [
+        [
+          {
+            "node": "Answer button: confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer button: confirmed": {
+      "main": [
+        [
+          {
+            "node": "DM buyer: confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark order declined": {
+      "main": [
+        [
+          {
+            "node": "Edit message: declined",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit message: declined": {
+      "main": [
+        [
+          {
+            "node": "Answer button: declined",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer button: declined": {
+      "main": [
+        [
+          {
+            "node": "DM buyer: declined",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "995fb9a5-bf7c-4bff-b658-cc2de9a6e9ce",
+  "activeVersionId": "995fb9a5-bf7c-4bff-b658-cc2de9a6e9ce",
+  "versionCounter": 2,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-11-20T14:56:43.064Z",
+      "createdAt": "2026-11-20T14:56:43.064Z",
+      "role": "workflow:owner",
+      "workflowId": "LC3Y0X8tV3BpFhZM",
+      "projectId": "kP67zQab1RNBdvlR",
+      "project": {
+        "updatedAt": "2026-07-20T11:29:43.758Z",
+        "createdAt": "2026-07-20T10:53:39.065Z",
+        "id": "kP67zQab1RNBdvlR",
+        "name": "Taras Pul <REDACTED>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "dedbd7d1-138d-4875-9c0b-fe88232968f5"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Attach Instagram credential",
+    "description": "Updated nodes: DM buyer: confirmed, DM buyer: declined"
+  }
+}

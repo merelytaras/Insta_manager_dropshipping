@@ -34,8 +34,11 @@
 ## 4. Workflows (n8n IDs)
 | ID | Name / role | State |
 |---|---|---|
-| `1P0iHc1pnokEWwAE` | Conversation handler (agent, prompt, tool descriptions) | live |
-| `f4U8TRP0hX53kiSC` | Instagram polling (`/conversations` every minute) | live |
+| `1P0iHc1pnokEWwAE` | EasyDrop demo – Conversation handler (agent, prompt, tool descriptions) | live |
+| `f4U8TRP0hX53kiSC` | EasyDrop demo – Instagram polling (`/conversations` every minute) | live |
+| `MqQcE8lKX3GE11Me` / `LC3Y0X8tV3BpFhZM` / `h4Fz42yuyODS13Gf` | EasyDrop demo – Tool create order / Approve order / Assistant (chat) | published / published / unpublished |
+| `NucsDBVgwqLWLGIF` | Shoes – Conversation handler (Rik Shoes) | unpublished (demo) |
+| `1TtwHeKw1ccCbxCG` / `xA4fcf6Dcf392R6W` / `Gq5aJ3cNGvW1Iloj` | Shoes – Tool create order / Owner commands / Refresh Instagram token (archived) | unpublished |
 | `31ovH3Px6lDIwwHI` | EasyDrop demo – Tool: check stock (alias table, winter search) | published |
 | `Vlq1mngvArKqad7o` | Shoes – Tool: handoff to human (+ guard), shared with Rik | published |
 | `Jz1HNEjcAJaIJZwp` | EasyDrop demo – Follow-up nudge | published |
@@ -46,8 +49,10 @@
 | `4zkNjBAi75zHJnjQ` | Webhook probe | live |
 | `bAz0D5BejaM5Qz7i` | Find by photo | live |
 | `717JIPmKT6PouevB` | Shoes – Error alert | UNPUBLISHED |
-| `tSgSpTdr0ANH3dkO` | Rik Shoes polling | UNPUBLISHED (republish after demo) |
-| `m9HYqSX0eLpCeQNk` | Rik approval (has EDR dispatcher to remove later) | — |
+| `tSgSpTdr0ANH3dkO` | Shoes – Instagram polling (Rik Shoes) | UNPUBLISHED (republish after demo) |
+| `m9HYqSX0eLpCeQNk` | Shoes – Owner approval (Telegram buttons); has EDR dispatcher to remove later | published |
+
+Full JSON exports (secrets/PII stripped) are in `workflows/` (see `workflows/README.md`). Other n8n workflows on the laptop (YouTube analytics etc.) belong to a different project and are not in this repo.
 | `PdjcluvRuvblWUFS` | TEMP test harness | unpublished, archive later |
 
 ## 5. Data tables (n8n project `kP67zQab1RNBdvlR`)

@@ -1,0 +1,130 @@
+{
+  "updatedAt": "2026-11-21T14:35:06.311Z",
+  "createdAt": "2026-11-20T14:41:15.250Z",
+  "id": "31ovH3Px6lDIwwHI",
+  "name": "EasyDrop demo - Tool - check stock",
+  "description": "Reads the EasyDrop feed and returns sizes in stock for a model name",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "28235824-1fbd-4627-879d-0e80b2c3942c",
+      "name": "Tool input",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "query",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ef98113f-b5c4-4781-b800-ed8380a6528c",
+      "name": "Find model and sizes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const rawQuery = String($('Tool input').first().json.query || '').toLowerCase();\nconst L = '[а-яіїєґ’\\']*';\nconst aliases = [\n  ['нью\\\\s*бал' + L + '|нью\\\\s*бел' + L + '|ньюбал' + L + '|ньюбел' + L + '|нб(?:еш' + L + ')?|нбешк' + L + '|nb', 'new balance'],\n  ['ад[іи]к' + L + '|ад[іи]д' + L + '|адд[іи]д' + L, 'adidas'],\n  ['пум' + L, 'puma'],\n  ['р[іие]б[оу]к' + L, 'reebok'],\n  ['найк' + L, 'nike'],\n  ['ас[іи]кс' + L, 'asics'],\n  ['конверс' + L, 'converse'],\n  ['ванс' + L, 'vans'],\n  ['скечерс' + L + '|скетчерс' + L, 'skechers'],\n  ['салом[оа]н' + L + '|солом[оа]н' + L, 'salomon'],\n  ['т[іи]мберл' + L + '|т[іи]мб' + L, 'timberland'],\n  ['тнф|tnf|(?:зе\\\\s*)?норт\\\\s*фейс' + L + '|нортфейс' + L, 'the north face'],\n  ['колумб[іи]' + L + '|коламб[іи]' + L, 'columbia'],\n  ['джордан' + L, 'jordan'],\n  ['філ[аиі]', 'fila'],\n  ['крокс' + L, 'crocs'],\n  ['угг' + L + '|уґґ' + L + '|угі', 'ugg'],\n  ['мартен' + L + '|мартін' + L + '|мартинс' + L, 'dr martens'],\n  ['(?:ундер|андер)\\\\s*армор' + L, 'under armour'],\n  ['хок[аи]|гок[аи]', 'hoka'],\n  ['сокані|саукон' + L, 'saucony'],\n  ['мерр?ел' + L, 'merrell'],\n  ['лакост' + L, 'lacoste'],\n  ['баленс[іи]аг' + L, 'balenciaga'],\n  ['гучч?і', 'gucci'],\n  ['єзі|ізі|їзі', 'yeezy'],\n  ['м[іи]цуно|мізуно', 'mizuno'],\n  ['афі?1|афк' + L + '|(?:ейр|аір|айр)\\\\s*форс' + L + '|форс(?:и|ах)', 'air force'],\n  ['данк' + L, 'dunk'],\n  ['(?:ейр|аір|айр)\\\\s*макс' + L + '|макси', 'air max'],\n  ['самб[аиуі]' + L, 'samba'],\n  ['газел' + L, 'gazelle'],\n  ['кампус' + L, 'campus'],\n  ['стан\\\\s*сміт' + L + '|стен\\\\s*сміт' + L, 'stan smith'],\n  ['суперстар' + L, 'superstar'],\n  ['асг|ацг', 'acg'],\n  ['чобот' + L + '|черевик' + L + '|б[оа]тинк' + L + '|ботінк' + L + '|сапог' + L, 'boot']\n];\nlet q = rawQuery;\nfor (const [pat, target] of aliases) {\n  q = q.replace(new RegExp('(^|[^а-яіїєґa-z0-9])(?:' + pat + ')(?![а-яіїєґa-z0-9])', 'g'), '$1' + target);\n}\nconst winterWord = /^(зим|тепл|утепл|мороз|холод|сніг|слякот|хутр|мех|термо|дощ|водостій|водонепро|непромок|осін|осен|winter|waterproof)/;\nconst winterIntent = q.split(/[^a-zа-яіїєґ0-9]+/i).some(t => winterWord.test(t));\n\nconst gtx = /gore|гортекс|гор-текс|gortex|goretex|гортех|гортек/.test(q);\nconst colorDefs = [\n  [/чорн|черн|black/, ['black']],\n  [/біл|бел|white/, ['white']],\n  [/сір|сер|grey|gray/, ['grey', 'gray']],\n  [/коричн|brown/, ['brown']],\n  [/беж|beige|cream|крем/, ['beige', 'cream', 'muslin', 'cave stone']],\n  [/зелен|green/, ['green']],\n  [/син|blue|navy/, ['blue', 'navy']],\n  [/червон|red/, ['red']],\n  [/рожев|pink/, ['pink']],\n  [/жовт|yellow/, ['yellow']],\n  [/хакі|khaki|оливк|olive/, ['khaki', 'olive']],\n  [/срібл|silver/, ['silver']]\n];\nconst colorAlts = [];\nfor (const [re, alts] of colorDefs) if (re.test(q)) colorAlts.push(alts);\nconst sizeM = q.match(/(?<![0-9,.])(3[4-9]|4[0-9])(?![0-9])/);\nconst wantSize = sizeM ? sizeM[1] : null;\n\nconst stop = ['на','хутрі','хутро','розмір','є','для','the','size','model_id','modelid','gore','tex','gore-tex','goretex','gortex','гортекс','гор','текс','будь','який','що','вітаю','привіт','добрий','день','вечір','здрастуйте','підкажіть','підкажи','покажіть','покажи','порадьте','порадь','мені','можна','яке','які','щось','якесь','ласка','мене','цікавить','шукаю','хочу','потрібні','потрібно','вас','чи','або','та','кросівки','кросівок','кросовки','взуття','обувь','кеди','пару','модель','моделі'];\nconst colorWords = /^(чорн|черн|black|біл|бел|white|сір|сер|grey|gray|коричн|brown|беж|beige|зелен|green|син|blue|navy|червон|red|рожев|pink|жовт|yellow|хакі|khaki|оливк|olive|срібл|silver)/;\nconst tokens = q.split(/[^a-zа-яіїєґ0-9]+/i).filter(t => t.length > 1 && !/^(3[4-9]|4[0-9])$/.test(t) && !stop.includes(t) && !colorWords.test(t) && !winterWord.test(t));\n\nconst all = $input.all().map(i => i.json).filter(r => r.model);\nconst lower = (r) => String(r.model).toLowerCase();\nconst score = (r) => tokens.filter(t => lower(r).includes(t)).length;\nconst idm = rawQuery.match(/(?<![0-9])([0-9]{4,7})(?![0-9])/);\nconst byId = idm ? all.find(r => String(r.group_id) === idm[1]) : null;\nconst hasSize = (r, s) => new RegExp('(^|, )' + s + ' \\\\(').test(String(r.sizes_in_stock || ''));\nconst isGtx = (r) => /gore[\\s-]*tex/i.test(r.model);\nconst isWinter = (r) => /fur|мех|хутр|boot|ботин|чобіт|gore[\\s-]*tex|cordura|winter|утепл|зим|термо|ugg|timberland/i.test(String(r.model) + ' ' + String(r.description || ''));\nconst hasColor = (r) => colorAlts.every(alts => alts.some(a => lower(r).includes(a)));\n\nlet found = [];\nlet mode = '';\nlet note = '';\nif (byId) {\n  found = [byId]; mode = 'точний збіг за model_id';\n} else {\n  let base = tokens.length ? all.filter(r => score(r) === tokens.length) : all.slice();\n  if (tokens.length && !base.length) base = all.filter(r => score(r) > 0);\n  const filterLabel = [winterIntent ? 'зимові/водостійкі (за назвою: хутро, boots, Gore-Tex, Cordura)' : '', gtx ? 'Gore-Tex' : '', colorAlts.length ? 'колір за назвою' : '', wantSize ? 'розмір ' + wantSize + ' є в наявності' : ''].filter(Boolean).join(', ');\n  const strict = (r) => (!gtx || isGtx(r)) && (!winterIntent || isWinter(r)) && hasColor(r) && (!wantSize || hasSize(r, wantSize)) && ((!gtx && !colorAlts.length && !wantSize && !winterIntent) || r.in_stock_count > 0);\n  found = base.filter(strict);\n  mode = filterLabel ? 'фільтри: ' + filterLabel : 'усі слова збіглися';\n  if (!found.length && filterLabel) {\n    if (wantSize) {\n      const r1 = base.filter(r => (!gtx || isGtx(r)) && (!winterIntent || isWinter(r)) && hasColor(r) && r.in_stock_count > 0);\n      if (r1.length) { found = r1; note = 'Точного збігу з розміром ' + wantSize + ' НЕМАЄ. Нижче моделі з тими ж критеріями, які є в ІНШИХ розмірах.'; }\n    }\n    if (!found.length && colorAlts.length) {\n      const r2 = base.filter(r => (!gtx || isGtx(r)) && (!winterIntent || isWinter(r)) && (!wantSize || hasSize(r, wantSize)) && r.in_stock_count > 0);\n      if (r2.length) { found = r2; note = 'Точного збігу за кольором НЕМАЄ. Нижче ті ж моделі інших кольорів' + (wantSize ? ' у розмірі ' + wantSize : '') + '.'; }\n    }\n    if (!found.length && gtx) {\n      const r3 = all.filter(r => isGtx(r) && (!wantSize || hasSize(r, wantSize)) && r.in_stock_count > 0);\n      if (r3.length) { found = r3; note = 'У цьому бренді/кольорі нічого немає. Нижче всі моделі Gore-Tex у каталозі' + (wantSize ? ' у розмірі ' + wantSize : '') + ', усіх брендів.'; }\n    }\n    if (!found.length && winterIntent && tokens.length) {\n      const r4 = all.filter(r => isWinter(r) && (!wantSize || hasSize(r, wantSize)) && r.in_stock_count > 0);\n      if (r4.length) { found = r4; note = 'У цьому бренді зимових моделей НЕМАЄ. Нижче зимові/водостійкі моделі інших брендів' + (wantSize ? ' у розмірі ' + wantSize : '') + '.'; }\n    }\n    if (!found.length) note = 'За цими фільтрами моделей в наявності НЕМАЄ (перевірено весь каталог).';\n  }\n  if (winterIntent && found.length) note = (note ? note + ' ' : '') + 'У каталозі немає окремого поля \"сезон\", тому моделі підібрані за назвою та матеріалом: Fur/хутро/мех і boots = утеплені, Gore-Tex = водостійка мембрана, Cordura = міцний текстиль (не обов\\'язково утеплений). Це чесна підстава пропонувати їх на зиму; для точних характеристик конкретної моделі можна знайти опис в інтернеті.';\n}\nfound.sort((a, b) => (score(b) - score(a)) || ((wantSize && hasSize(b, wantSize) ? 1 : 0) - (wantSize && hasSize(a, wantSize) ? 1 : 0)) || ((b.in_stock_count || 0) - (a.in_stock_count || 0)));\nconst top = found.slice(0, 8);\nconst complete = found.length <= top.length;\n\nconst material = (r) => String(r.description || '').replace(/Виробник\\s*:.*$/i, '').replace(/Матеріал\\s*:/i, '').trim();\nconst fmt = (r) => {\n  const mat = material(r);\n  const warm = /хутр|мех|утепл|зим|fur|winter/i.test(r.model + ' ' + (r.description || ''));\n  return r.model + ' [model_id ' + r.group_id + '] | ' + r.price + ' грн | є розміри: ' + (r.sizes_in_stock ? r.sizes_in_stock : 'немає в наявності') + (r.sizes_out ? ' | немає розмірів: ' + r.sizes_out : '') + ' | матеріал у каталозі: ' + (mat || 'не вказано') + (isGtx(r) ? ' | у назві Gore-Tex (водостійка мембрана)' : '') + (warm ? ' | у каталозі є позначка про утеплення/зиму' : '');\n};\n\nconst rule = '\\nПРАВИЛО: пропонуй клієнту ТІЛЬКИ моделі з цього списку, нічого не вигадуй. ' + (complete ? 'Цей список ПОВНИЙ: усі моделі каталогу, що відповідають запиту (перевірено весь каталог), тому впевнено говори, що інших немає, і НЕ передавай менеджеру через список. ' : 'Цей список НЕПОВНИЙ (показано лише частину): твердити, що інших моделей немає, не можна; запропонуй клієнту уточнити запит (бренд, колір, розмір). ') + 'Якщо клієнт назвав розмір, він вже врахований у фільтрі. Якщо точного збігу немає — чесно скажи про це і запропонуй найближчі варіанти з списку (інший розмір, інший колір).\\nХАРАКТЕРИСТИКИ (сезон, утеплення, водостійкість, технології, призначення): матеріал каталогу називай як є, Gore-Tex у назві означає водостійку мембрану. Якщо даних мало, шукай опис моделі в інтернеті (з позначкою джерела) та НЕ викликай handoff_to_human без згоди клієнта.' + (winterIntent ? '\\nКлієнт питає про зимові/теплі моделі: НЕ передавай менеджеру. Запропонуй 2–3 моделі зі списку (різні типи, наприклад чоботи з хутром і Gore-Tex), поясни чому вони підходять на зиму і уточни стать, розмір, бренд чи бюджет.' : '');\n\nconst result = top.length\n  ? 'Знайдено моделей: ' + found.length + ' (' + mode + '). Показано ' + top.length + (complete ? ' (усі)' : ' найбільш підхожих') + ':' + (note ? '\\n' + note : '') + '\\n' + top.map(fmt).join('\\n') + rule\n  : (note ? note + ' ' : '') + 'За запитом \"' + rawQuery + '\" у каталозі нічого не знайдено. Усього моделей у каталозі: ' + all.length + '. Попроси клієнта уточнити назву моделі і нічого не вигадуй.';\n\nreturn [{ json: { result } }];",
+        "language": "javaScript",
+        "mode": "runOnceForAllItems"
+      }
+    },
+    {
+      "id": "7b4b5580-34e4-4b2f-b4a9-d1d564da4772",
+      "name": "Get cached catalog",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "73uDrVHYxs5M5e5V"
+        },
+        "operation": "get",
+        "resource": "row",
+        "returnAll": true
+      }
+    }
+  ],
+  "connections": {
+    "Tool input": {
+      "main": [
+        [
+          {
+            "node": "Get cached catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get cached catalog": {
+      "main": [
+        [
+          {
+            "node": "Find model and sizes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "a28bf820-7a97-4e36-931f-c7aa56782c7a",
+  "activeVersionId": "a28bf820-7a97-4e36-931f-c7aa56782c7a",
+  "versionCounter": 12,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-11-20T14:41:15.265Z",
+      "createdAt": "2026-11-20T14:41:15.265Z",
+      "role": "workflow:owner",
+      "workflowId": "31ovH3Px6lDIwwHI",
+      "projectId": "kP67zQab1RNBdvlR",
+      "project": {
+        "updatedAt": "2026-07-20T11:29:43.758Z",
+        "createdAt": "2026-07-20T10:53:39.065Z",
+        "id": "kP67zQab1RNBdvlR",
+        "name": "Taras Pul <REDACTED>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "dedbd7d1-138d-4875-9c0b-fe88232968f5"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Generic words and waterproof stems",
+    "description": "Updated nodes: Find model and sizes"
+  }
+}

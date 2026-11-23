@@ -1,0 +1,437 @@
+{
+  "updatedAt": "2026-11-18T18:24:16.881Z",
+  "createdAt": "2026-11-17T13:15:32.766Z",
+  "id": "717JIPmKT6PouevB",
+  "name": "Shoes - Error alert",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "35b5e479-c9a5-45c0-acae-ec4166e5d8b5",
+      "name": "Workflow failed",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "alert_key",
+              "type": "string",
+              "value": "={{ $json.workflow.name + \"|\" + ($json.execution?.lastNodeExecuted ?? \"\") }}"
+            },
+            {
+              "id": "a2",
+              "name": "workflow_name",
+              "type": "string",
+              "value": "={{ String($json.workflow.name).replace(/[<>&]/g, \" \") }}"
+            },
+            {
+              "id": "a3",
+              "name": "failed_node",
+              "type": "string",
+              "value": "={{ String($json.execution?.lastNodeExecuted ?? $json.trigger?.error?.node?.name ?? \"-\").replace(/[<>&]/g, \" \") }}"
+            },
+            {
+              "id": "a4",
+              "name": "error_message",
+              "type": "string",
+              "value": "={{ String($json.execution?.error?.message ?? $json.trigger?.error?.message ?? \"unknown error\").replace(/[<>&]/g, \" \").slice(0, 300) }}"
+            },
+            {
+              "id": "a5",
+              "name": "execution_url",
+              "type": "string",
+              "value": "={{ $json.execution?.url ?? \"\" }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f374a30b-70d6-4f14-80f6-801c1ac4ddd2",
+      "name": "Prepare alert",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -720,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "g2OIvtv8scLOyHFH",
+          "mode": "list",
+          "cachedResultName": "shoes alert log",
+          "cachedResultUrl": "/projects/kP67zQab1RNBdvlR/datatables/g2OIvtv8scLOyHFH"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "alert_key",
+              "keyValue": "={{ $json.alert_key }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "0aad6247-3ced-4098-a044-b3ecca70c850",
+      "name": "Check last alert",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -480,
+        96
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $(\"Prepare alert\").first().json.error_message.includes(\"sub-workflow\") }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            },
+            {
+              "leftValue": "={{ !$json.last_alert_at || (Date.now() - new Date($json.last_alert_at).getTime()) > 1800000 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7f2bfaf5-31ea-4037-917c-5db3e14da373",
+      "name": "Should alert?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "g2OIvtv8scLOyHFH",
+          "mode": "list",
+          "cachedResultName": "shoes alert log",
+          "cachedResultUrl": "/projects/kP67zQab1RNBdvlR/datatables/g2OIvtv8scLOyHFH"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "alert_key",
+              "keyValue": "={{ $(\"Prepare alert\").first().json.alert_key }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "alert_key": "={{ $(\"Prepare alert\").first().json.alert_key }}",
+            "last_alert_at": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "alert_key"
+          ],
+          "schema": [
+            {
+              "id": "alert_key",
+              "displayName": "alert_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_alert_at",
+              "displayName": "last_alert_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f346541b-536e-4a8b-9193-7178405abc17",
+      "name": "Save alert time",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Get owner chat').first().json.value }}",
+        "text": "=⚠️ Збій у боті\nWorkflow: {{ $(\"Prepare alert\").first().json.workflow_name }}\nВузол: {{ $(\"Prepare alert\").first().json.failed_node }}\nПомилка: {{ $(\"Prepare alert\").first().json.error_message }}\n{{ $(\"Prepare alert\").first().json.execution_url }}\n\nОднакові сповіщення приглушуються на 30 хвилин.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "75c85277-5707-44f2-a8a0-787228ad1929",
+      "name": "Send error alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        0
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "4566f57f-f073-4f9c-9fd3-ca1f41b3b652",
+      "name": "Send a test alert",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1200,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "workflow.name",
+              "type": "string",
+              "value": "Тест сповіщень"
+            },
+            {
+              "id": "s2",
+              "name": "execution.lastNodeExecuted",
+              "type": "string",
+              "value": "={{ 'test ' + $now.toFormat('HH:mm:ss') }}"
+            },
+            {
+              "id": "s3",
+              "name": "execution.error.message",
+              "type": "string",
+              "value": "Це тестове сповіщення: якщо ви його бачите, система сповіщень працює"
+            },
+            {
+              "id": "s4",
+              "name": "execution.url",
+              "type": "string",
+              "value": "https://lsfu.app.n8n.cloud/workflow/krzWaYQxe0Qp4PbD"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "56d5cbec-8b25-4cc2-88fd-6331a3bd2b2e",
+      "name": "Sample error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -960,
+        320
+      ]
+    },
+    {
+      "id": "21d4a8ab-d1e5-4d4c-bd94-48e234afbbd8",
+      "name": "Get owner chat",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        120,
+        0
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "shoes settings",
+          "mode": "list",
+          "value": "jQTafqjKvGXLfhuJ"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "owner_chat_id"
+            }
+          ]
+        },
+        "limit": 1,
+        "matchType": "allConditions",
+        "operation": "get"
+      }
+    }
+  ],
+  "connections": {
+    "Workflow failed": {
+      "main": [
+        [
+          {
+            "node": "Prepare alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare alert": {
+      "main": [
+        [
+          {
+            "node": "Check last alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check last alert": {
+      "main": [
+        [
+          {
+            "node": "Should alert?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should alert?": {
+      "main": [
+        [
+          {
+            "node": "Save alert time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a test alert": {
+      "main": [
+        [
+          {
+            "node": "Sample error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample error": {
+      "main": [
+        [
+          {
+            "node": "Prepare alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save alert time": {
+      "main": [
+        [
+          {
+            "node": "Get owner chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get owner chat": {
+      "main": [
+        [
+          {
+            "node": "Send error alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "c55a9e38-f43a-469d-8406-a686609903f3",
+  "activeVersionId": null,
+  "versionCounter": 6,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-11-17T13:15:32.770Z",
+      "createdAt": "2026-11-17T13:15:32.770Z",
+      "role": "workflow:owner",
+      "workflowId": "717JIPmKT6PouevB",
+      "projectId": "kP67zQab1RNBdvlR",
+      "project": {
+        "updatedAt": "2026-07-20T11:29:43.758Z",
+        "createdAt": "2026-07-20T10:53:39.065Z",
+        "id": "kP67zQab1RNBdvlR",
+        "name": "Taras Pul <REDACTED>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "dedbd7d1-138d-4875-9c0b-fe88232968f5"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Owner chat ID from settings",
+    "description": "Added nodes: Get owner chat\nUpdated nodes: Send error alert\nConnections: 2 added, 1 removed"
+  }
+}

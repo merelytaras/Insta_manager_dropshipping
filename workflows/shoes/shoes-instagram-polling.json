@@ -1,0 +1,549 @@
+{
+  "updatedAt": "2026-11-18T18:24:46.759Z",
+  "createdAt": "2026-11-17T13:14:50.872Z",
+  "id": "tSgSpTdr0ANH3dkO",
+  "name": "Shoes - Instagram polling",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "url": "={{ 'https://graph.facebook.com/v27.0/' + $('Get IG account').first().json.value + '/conversations' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "platform",
+              "value": "instagram"
+            },
+            {
+              "name": "fields",
+              "value": "messages.limit(10){message,from,created_time,attachments,shares{id,name,description,link},story}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "91aa4060-07ba-4825-9002-4f954a8e3028",
+      "name": "Poll Instagram conversations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        368,
+        336
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Instagram Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "id": "719f8d40-3b60-412e-be2a-3c83760cda76",
+      "name": "One item per conversation",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        528,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "w1",
+              "leftValue": "={{ $json.pending_text }}",
+              "operator": {
+                "operation": "notEmpty",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            },
+            {
+              "id": "w2",
+              "leftValue": "={{ $json.last_text_time ? new Date($json.last_text_time) > new Date(Date.now() - 10*60*1000) : false }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "7347c758-02d4-49ac-8719-b6d2848fb578",
+      "name": "Customer waiting for a reply?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        912,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "NucsDBVgwqLWLGIF",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/NucsDBVgwqLWLGIF",
+          "cachedResultName": "Shoes - Conversation handler"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "customer_id": "={{ $json.customer_id }}",
+            "username": "={{ $json.username }}",
+            "message": "={{ $json.pending_text }}",
+            "context": "={{ $json.context }}",
+            "image_url": "={{ $json.image_url }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "customer_id",
+              "displayName": "customer_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "username",
+              "displayName": "username",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "context",
+              "displayName": "context",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "image_url",
+              "displayName": "image_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "id": "e57fe40f-8999-40fc-b1da-2478fa3649d5",
+      "name": "Handle conversation",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1168,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Instagram polling (fallback)\nMeta does not push real-time DM webhooks to this app yet, so this workflow checks the shop conversations every few minutes.\nA customer is answered when their LAST message is recent (10 min), not empty and not from the shop.\nEach conversation runs in its own sub-run (Shoes - Conversation handler).\nEvery poll costs 1 execution: keep this workflow unpublished while testing, or use a cron such as */5 9-20 * * * for business hours.",
+        "height": 272,
+        "width": 880,
+        "color": 3
+      },
+      "id": "8ea369a1-9111-4e9b-bed4-d546299095bb",
+      "name": "Sticky Note 240aaae8",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "u1",
+              "name": "customer_id",
+              "type": "string",
+              "value": "={{ (() => { const shop = $('Get IG account').first().json.value; const c = $json.messages.data.find(m => m.from.id !== shop); return c ? c.from.id : ''; })() }}"
+            },
+            {
+              "id": "u2",
+              "name": "username",
+              "type": "string",
+              "value": "={{ (() => { const shop = $('Get IG account').first().json.value; const c = $json.messages.data.find(m => m.from.id !== shop); return c ? c.from.username : ''; })() }}"
+            },
+            {
+              "id": "u3",
+              "name": "pending_text",
+              "type": "string",
+              "value": "={{ (() => { const shop = $('Get IG account').first().json.value; const msgs = $json.messages.data; const idx = msgs.findIndex(m => m.from.id === shop); const un = (idx === -1 ? msgs : msgs.slice(0, idx)).filter(m => Date.now() - new Date(m.created_time).getTime() < 900000); const label = m => m.message ? (m.message + (m.story ? ' [відповідь на сторіс магазину]' : '')) : (m.attachments?.data?.[0]?.image_data ? '[Клієнт надіслав зображення]' : (m.shares?.data?.length ? '[Клієнт поділився публікацією: ' + (m.shares.data[0].description || m.shares.data[0].name || m.shares.data[0].link || '') + ']' : (m.story ? '[Клієнт відповів на сторіс магазину]' : ''))); return un.map(label).filter(Boolean).reverse().join('\\n'); })() }}"
+            },
+            {
+              "id": "u4",
+              "name": "last_text_time",
+              "type": "string",
+              "value": "={{ (() => { const shop = $('Get IG account').first().json.value; const msgs = $json.messages.data; const idx = msgs.findIndex(m => m.from.id === shop); const un = (idx === -1 ? msgs : msgs.slice(0, idx)).filter(m => Date.now() - new Date(m.created_time).getTime() < 900000); const has = m => m.message || m.attachments?.data?.[0]?.image_data || m.shares?.data?.length || m.story; const t = un.find(has); return t ? t.created_time : ''; })() }}"
+            },
+            {
+              "id": "u5",
+              "name": "context",
+              "type": "string",
+              "value": "={{ (() => { const shop = $('Get IG account').first().json.value; const msgs = $json.messages.data; const idx = msgs.findIndex(m => m.from.id === shop); const prior = (idx === -1 ? [] : msgs.slice(idx)).filter(m => m.message || m.attachments?.data?.length).slice(0, 6).reverse(); return prior.map(m => (m.from.id === shop ? 'Магазин: ' : 'Клієнт: ') + (m.message || '[зображення]')).join('\\n'); })() }}"
+            },
+            {
+              "id": "u6",
+              "name": "image_url",
+              "type": "string",
+              "value": "={{ (() => { const shop = $('Get IG account').first().json.value; const msgs = $json.messages.data; const idx = msgs.findIndex(m => m.from.id === shop); const un = (idx === -1 ? msgs : msgs.slice(0, idx)).filter(m => Date.now() - new Date(m.created_time).getTime() < 900000); const u = un.map(m => m.attachments?.data?.[0]?.image_data?.url || m.story?.reply_to?.link || m.story?.mention?.link).find(Boolean); return u || ''; })() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cee93cc3-d2ac-4c95-b503-f4d9a86bcb1e",
+      "name": "Collect unanswered messages",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        704,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 2
+            }
+          ]
+        }
+      },
+      "id": "d692739e-a990-4425-8303-9ab4475da05b",
+      "name": "Every 2 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -128,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "jQTafqjKvGXLfhuJ"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "bot_enabled"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "d69c7eff-261d-4bcc-ae97-0b6a7c91ed54",
+      "name": "Get bot switch",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        32,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "b1",
+              "leftValue": "={{ $json.value !== 'false' }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "e4edee3b-42ac-4b47-b6b4-e2045de9d46e",
+      "name": "Bot switched on?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        176,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "t7PkfUtoPYsNYuu5"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ig_user_id",
+              "keyValue": "={{ $json.customer_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "ig_user_id"
+          ],
+          "value": {
+            "ig_user_id": "={{ $json.customer_id }}",
+            "last_seen": "={{ new Date().toISOString() }}",
+            "username": "={{ String($json.username || '').toLowerCase() }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "ec396a0f-911f-46e9-9f27-3d201a66fff6",
+      "name": "Remember customer",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1168,
+        480
+      ]
+    },
+    {
+      "id": "e7185a08-e221-4097-9005-d45a58a145e0",
+      "name": "Get IG account",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        336
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "jQTafqjKvGXLfhuJ"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "ig_account_id"
+            }
+          ]
+        },
+        "limit": 1,
+        "matchType": "allConditions",
+        "operation": "get"
+      }
+    }
+  ],
+  "connections": {
+    "Collect unanswered messages": {
+      "main": [
+        [
+          {
+            "node": "Customer waiting for a reply?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll Instagram conversations": {
+      "main": [
+        [
+          {
+            "node": "One item per conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One item per conversation": {
+      "main": [
+        [
+          {
+            "node": "Collect unanswered messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer waiting for a reply?": {
+      "main": [
+        [
+          {
+            "node": "Handle conversation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Remember customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 2 minutes": {
+      "main": [
+        [
+          {
+            "node": "Get bot switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get bot switch": {
+      "main": [
+        [
+          {
+            "node": "Bot switched on?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bot switched on?": {
+      "main": [
+        [
+          {
+            "node": "Get IG account",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get IG account": {
+      "main": [
+        [
+          {
+            "node": "Poll Instagram conversations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "717JIPmKT6PouevB",
+    "callerPolicy": "workflowsFromSameOwner",
+    "saveDataSuccessExecution": "none",
+    "executionTimeout": 90
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "c8dda6f2-9d8e-4b04-93de-e198ca08103b",
+  "activeVersionId": null,
+  "versionCounter": 42,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-11-17T13:14:50.885Z",
+      "createdAt": "2026-11-17T13:14:50.885Z",
+      "role": "workflow:owner",
+      "workflowId": "tSgSpTdr0ANH3dkO",
+      "projectId": "kP67zQab1RNBdvlR",
+      "project": {
+        "updatedAt": "2026-07-20T11:29:43.758Z",
+        "createdAt": "2026-07-20T10:53:39.065Z",
+        "id": "kP67zQab1RNBdvlR",
+        "name": "Taras Pul <REDACTED>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "dedbd7d1-138d-4875-9c0b-fe88232968f5"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Instagram account ID from settings",
+    "description": "Added nodes: Get IG account\nUpdated nodes: Poll Instagram conversations, Collect unanswered messages\nConnections: 2 added, 1 removed"
+  }
+}

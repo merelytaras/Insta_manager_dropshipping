@@ -1,0 +1,202 @@
+{
+  "updatedAt": "2026-11-20T21:07:26.416Z",
+  "createdAt": "2026-11-20T21:07:26.416Z",
+  "id": "4zkNjBAi75zHJnjQ",
+  "name": "EasyDrop demo - Webhook probe (log only)",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "c6e6d97b-d5dd-4e9d-aa46-048d95563a88",
+      "name": "Meta verify (GET)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "edr-ig-webhook",
+        "authentication": "none",
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "id": "8b6d099c-96cf-4daa-9b87-610eae5f1487",
+      "name": "Answer challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}"
+      }
+    },
+    {
+      "id": "ffcf9979-c8b0-4946-9e13-a011b7fb531f",
+      "name": "Meta events (POST)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        224
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "edr-ig-webhook",
+        "authentication": "none",
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "id": "7abb5825-d49d-4e0f-9aea-8f02e3481258",
+      "name": "Flatten events",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        224
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const body = $input.first().json.body || {};\nconst out = [];\nfor (const entry of (body.entry || [])) {\n  const evs = entry.messaging || entry.changes || [entry];\n  for (const ev of evs) {\n    const msg = ev.message || (ev.value && ev.value.message) || {};\n    const atts = (msg.attachments || []).map(a => a.type);\n    const summary = 'text=' + (msg.text ? 'yes' : 'no') + ' attachments=[' + atts.join(',') + ']' + (msg.is_echo ? ' echo' : '') + (msg.is_unsupported ? ' unsupported' : '');\n    out.push({ json: { ts: new Date().toISOString(), summary, raw: JSON.stringify(ev).slice(0, 8000) } });\n  }\n}\nif (!out.length) out.push({ json: { ts: new Date().toISOString(), summary: 'no entries', raw: JSON.stringify(body).slice(0, 8000) } });\nreturn out;"
+      }
+    },
+    {
+      "id": "ab8d87ac-c243-43fb-ad59-7fdfa68a2f3a",
+      "name": "Log event",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        224
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ujZf1NCiXjCv42q1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ts": "={{ $json.ts }}",
+            "summary": "={{ $json.summary }}",
+            "raw": "={{ $json.raw }}"
+          },
+          "schema": [
+            {
+              "id": "ts",
+              "displayName": "ts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "raw",
+              "displayName": "raw",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Meta verify (GET)": {
+      "main": [
+        [
+          {
+            "node": "Answer challenge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meta events (POST)": {
+      "main": [
+        [
+          {
+            "node": "Flatten events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten events": {
+      "main": [
+        [
+          {
+            "node": "Log event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "34910db4-6fcb-4cb5-9d3c-80cf1e20f16d",
+  "activeVersionId": "34910db4-6fcb-4cb5-9d3c-80cf1e20f16d",
+  "versionCounter": 1,
+  "triggerCount": 2,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-11-20T21:07:26.448Z",
+      "createdAt": "2026-11-20T21:07:26.448Z",
+      "role": "workflow:owner",
+      "workflowId": "4zkNjBAi75zHJnjQ",
+      "projectId": "kP67zQab1RNBdvlR",
+      "project": {
+        "updatedAt": "2026-07-20T11:29:43.758Z",
+        "createdAt": "2026-07-20T10:53:39.065Z",
+        "id": "kP67zQab1RNBdvlR",
+        "name": "Taras Pul <REDACTED>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "dedbd7d1-138d-4875-9c0b-fe88232968f5"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Log-only Meta webhook probe",
+    "description": "Created with 5 nodes: Meta verify (GET), Answer challenge, Meta events (POST), Flatten events, Log event"
+  }
+}

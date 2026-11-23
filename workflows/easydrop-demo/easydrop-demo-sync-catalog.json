@@ -1,0 +1,320 @@
+{
+  "updatedAt": "2026-11-20T19:05:25.659Z",
+  "createdAt": "2026-11-20T14:44:06.218Z",
+  "id": "Nl6uEgA2gmiu6SAf",
+  "name": "EasyDrop demo - Sync catalog",
+  "description": "Copies the EasyDrop feed into a data table every 15 minutes",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "c02cb383-86d4-46da-87d8-f714f519c425",
+      "name": "Every 15 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "bb3a1377-b890-4735-bc80-REDACTED",
+      "name": "Download EasyDrop feed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://easydrop.one/prom-export?key=REDACTED&pid=REDACTED",
+        "options": {
+          "timeout": 120000,
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "adabfe70-3cc5-465e-9424-aa058bfbb5f9",
+      "name": "Parse XML",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "mode": "xmlToJson",
+        "dataPropertyName": "data",
+        "options": {
+          "explicitArray": false,
+          "mergeAttrs": true,
+          "explicitRoot": true
+        }
+      }
+    },
+    {
+      "id": "61ac9f91-7a6a-4c3f-a0e8-a54efecc1196",
+      "name": "Build one row per model",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const root = $json.shop || $json;\nlet items = (root.items && root.items.item) || [];\nif (!Array.isArray(items)) items = [items];\n\nconst first = (v) => Array.isArray(v) ? v[0] : v;\nconst txt = (v) => { v = first(v); if (v && typeof v === 'object') v = v._ ?? v['#text'] ?? ''; return String(v ?? '').trim(); };\nconst paramsOf = (it) => { let p = it.param; if (!p) return []; return Array.isArray(p) ? p : [p]; };\nconst sizeOf = (it) => {\n  const p = paramsOf(it);\n  const hit = p.find(x => x && typeof x === 'object' && String(x.name).toLowerCase().startsWith('розм')) || p[0];\n  if (hit && typeof hit === 'object') return String(hit._ ?? hit['#text'] ?? '').trim();\n  return String(hit || '').trim();\n};\n\nconst groups = new Map();\nfor (const it of items) {\n  const name = txt(it.name);\n  const gid = String(first(it.group_id) || name);\n  if (!groups.has(gid)) groups.set(gid, { model: name, group_id: gid, price: Number(first(it.priceuah)) || 0, inStock: [], out: [], codes: [], images: [], params: new Map(), description: '' });\n  const g = groups.get(gid);\n  const size = sizeOf(it);\n  const vals = [].concat(it.available);\n  const available = vals.some(v => String(v) === 'true');\n  const qty = Number(first(it.quantity_in_stock) || 0);\n  const code = txt(it.vendorCode);\n  if (code) g.codes.push(size + ': ' + code);\n  if (available && qty > 0) g.inStock.push(size + ' (' + qty + ')');\n  else g.out.push(size);\n  for (const im of [].concat(it.image || [])) { const u = String(im || '').trim(); if (u && !g.images.includes(u)) g.images.push(u); }\n  for (const p of paramsOf(it)) { if (p && typeof p === 'object') { const n = String(p.name || '').trim(); if (n && !n.toLowerCase().startsWith('розм') && !g.params.has(n)) g.params.set(n, String(p._ ?? p['#text'] ?? '').trim()); } }\n  if (!g.description) g.description = txt(it.description).replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, 700);\n}\n\nreturn Array.from(groups.values()).map(g => ({ json: {\n  model: g.model,\n  group_id: g.group_id,\n  price: g.price,\n  sizes_in_stock: g.inStock.join(', '),\n  sizes_out: g.out.join(', '),\n  in_stock_count: g.inStock.length,\n  codes: g.codes.join(', '),\n  image: g.images[0] || '',\n  images: g.images.slice(0, 8).join(' '),\n  params: Array.from(g.params.entries()).map(([k, v]) => k + ': ' + v).join('; ').slice(0, 500),\n  description: g.description\n} }));"
+      }
+    },
+    {
+      "id": "c9f8b887-b4a0-4787-98c1-e97937a633ac",
+      "name": "Save model to catalog",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "model",
+              "id": "model",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "group_id",
+              "id": "group_id",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "price",
+              "id": "price",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sizes_in_stock",
+              "id": "sizes_in_stock",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "sizes_out",
+              "id": "sizes_out",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "in_stock_count",
+              "id": "in_stock_count",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "codes",
+              "id": "codes",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "image",
+              "id": "image",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "images",
+              "id": "images",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "params",
+              "id": "params",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "description",
+              "id": "description",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "codes": "={{ $json.codes }}",
+            "group_id": "={{ $json.group_id }}",
+            "image": "={{ $json.image }}",
+            "in_stock_count": "={{ $json.in_stock_count }}",
+            "model": "={{ $json.model }}",
+            "price": "={{ $json.price }}",
+            "sizes_in_stock": "={{ $json.sizes_in_stock }}",
+            "sizes_out": "={{ $json.sizes_out }}",
+            "description": "={{ $json.description }}",
+            "images": "={{ $json.images }}",
+            "params": "={{ $json.params }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "73uDrVHYxs5M5e5V"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "group_id",
+              "keyValue": "={{ $json.group_id }}"
+            }
+          ]
+        },
+        "matchType": "allConditions",
+        "operation": "upsert",
+        "resource": "row"
+      }
+    }
+  ],
+  "connections": {
+    "Every 15 minutes": {
+      "main": [
+        [
+          {
+            "node": "Download EasyDrop feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download EasyDrop feed": {
+      "main": [
+        [
+          {
+            "node": "Parse XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse XML": {
+      "main": [
+        [
+          {
+            "node": "Build one row per model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build one row per model": {
+      "main": [
+        [
+          {
+            "node": "Save model to catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "errorWorkflow": "717JIPmKT6PouevB"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "b4690420-0943-490c-bd55-97519b5e13df",
+  "activeVersionId": "b4690420-0943-490c-bd55-97519b5e13df",
+  "versionCounter": 6,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-11-20T14:44:06.255Z",
+      "createdAt": "2026-11-20T14:44:06.255Z",
+      "role": "workflow:owner",
+      "workflowId": "Nl6uEgA2gmiu6SAf",
+      "projectId": "kP67zQab1RNBdvlR",
+      "project": {
+        "updatedAt": "2026-07-20T11:29:43.758Z",
+        "createdAt": "2026-07-20T10:53:39.065Z",
+        "id": "kP67zQab1RNBdvlR",
+        "name": "Taras Pul <REDACTED>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "dedbd7d1-138d-4875-9c0b-fe88232968f5"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Store all images, params, description",
+    "description": "Updated nodes: Build one row per model, Save model to catalog"
+  }
+}

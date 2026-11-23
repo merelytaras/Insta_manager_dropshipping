@@ -1,0 +1,1692 @@
+{
+  "updatedAt": "2026-11-19T12:54:15.583Z",
+  "createdAt": "2026-11-18T13:49:21.630Z",
+  "id": "xA4fcf6Dcf392R6W",
+  "name": "Shoes - Owner commands",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "9ba36498-1b02-4082-ae6e-ec3ffa8d3aee",
+      "name": "Owner update",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const OWNER = String($('Get owner chat').first().json.value);\nconst u = $('Owner update').first().json;\nconst msg = u.message;\nconst cb = u.callback_query;\nconst chat = String(msg ? msg.chat.id : (cb && cb.message ? cb.message.chat.id : ''));\nlet cmd = 'ignore';\nlet user = '';\nlet hours = 24;\nlet a1 = '', a2 = '', a3 = '';\nif (chat === OWNER) {\n  if (cb) {\n    if (cb.data === 'bot|on') cmd = 'on';\n    if (cb.data === 'bot|off') cmd = 'off';\n  } else if (msg && msg.text && msg.text.startsWith('/')) {\n    const parts = msg.text.trim().split(/\\s+/);\n    const c = parts[0].toLowerCase().split('@')[0];\n    const map = { '/menu': 'menu', '/start': 'menu', '/help': 'menu', '/stop': 'off', '/off': 'off', '/on': 'on', '/pause': 'pause', '/resume': 'resume', '/paused': 'paused', '/orders': 'orders', '/stock': 'stock', '/ship': 'ship' };\n    cmd = map[c] || 'menu';\n    user = (parts[1] || '').replace('@', '').toLowerCase();\n    hours = Math.min(Math.max(parseInt(parts[2]) || 24, 1), 720);\n    a1 = parts[1] || ''; a2 = parts[2] || ''; a3 = parts[3] || '';\n    if ((cmd === 'pause' || cmd === 'resume') && !user) cmd = 'menu';\n    if (cmd === 'stock') {\n      const s = parseInt(a2); const q = parseInt(a3);\n      if (!a1 || !(s >= 36 && s <= 46) || isNaN(q) || q < 0) { cmd = 'menu'; } else { a2 = String(s); a3 = String(q); }\n    }\n    if (cmd === 'ship' && (!a1 || !a2)) cmd = 'menu';\n  }\n}\nreturn [{ json: { cmd, user, hours, a1, a2, a3, chat_id: OWNER, callback_id: cb ? cb.id : '' } }];"
+      },
+      "id": "78a13165-cd41-4e79-a609-e16d2ecb531d",
+      "name": "Parse owner command",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.cmd }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "menu"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                }
+              }
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.cmd }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "off"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                }
+              }
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.cmd }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "on"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                }
+              }
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.cmd }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "pause"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                }
+              }
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.cmd }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "resume"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                }
+              }
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.cmd }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "paused"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                }
+              }
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.cmd }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "orders"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                }
+              }
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.cmd }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "stock"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                }
+              }
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.cmd }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "ship"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                }
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7b5a7b20-544a-41b7-a849-d590a28bd04d",
+      "name": "Which command?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Parse owner command\").first().json.chat_id }}",
+        "text": "bot controls\n\n/stop - stop the bot for everyone\n/on - turn the bot back on\n/pause username 24 - pause one customer for N hours (default 24)\n/resume username - resume one customer\n/paused - list paused customers\n\n/orders - pending and confirmed orders\n/stock M01 42 3 - set stock of model M01, size 42, to 3 pairs\n/ship ORDER_ID TTN - mark order shipped and send the tracking number to the buyer",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "⏸ Stop bot",
+                    "additionalFields": {
+                      "callback_data": "bot|off"
+                    }
+                  },
+                  {
+                    "text": "▶️ Start bot",
+                    "additionalFields": {
+                      "callback_data": "bot|on"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "c0cec096-7915-40a7-bb82-da193f3402f5",
+      "name": "Send menu",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "jQTafqjKvGXLfhuJ"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "bot_enabled"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "key": "bot_enabled",
+            "value": "false"
+          },
+          "matchingColumns": [
+            "key"
+          ]
+        },
+        "options": {}
+      },
+      "id": "ad591a3a-8580-4e2f-8845-61b867f8007f",
+      "name": "Set bot off",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Parse owner command\").first().json.chat_id }}",
+        "text": "⏸ Bot is STOPPED for all customers. Messages will not be answered. Send /on to start it again.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "111ee784-ae17-402f-846b-f9dc18f119b9",
+      "name": "Confirm bot off",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        896,
+        192
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "callback",
+        "queryId": "={{ $(\"Parse owner command\").first().json.callback_id }}",
+        "additionalFields": {
+          "text": "Done"
+        }
+      },
+      "id": "b760fb6c-6e9a-43e1-a8cc-b88ccc9d3b5d",
+      "name": "Answer button",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        288
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "jQTafqjKvGXLfhuJ"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "bot_enabled"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "key": "bot_enabled",
+            "value": "true"
+          },
+          "matchingColumns": [
+            "key"
+          ]
+        },
+        "options": {}
+      },
+      "id": "7bf34227-12d1-4cce-996f-2f38f16c2094",
+      "name": "Set bot on",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Parse owner command\").first().json.chat_id }}",
+        "text": "▶️ Bot is ON. It answers customers again.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "2c5d0b5f-baf8-445b-b7f6-9d9e0c095820",
+      "name": "Confirm bot on",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        896,
+        384
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "t7PkfUtoPYsNYuu5"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "username",
+              "condition": "ilike",
+              "keyValue": "={{ $(\"Parse owner command\").first().json.user }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "ab982cea-7806-44ad-a7c6-012409c816d0",
+      "name": "Find customer to pause",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        672
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ig_user_id }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d4fa1898-2f34-4b55-b9a2-fe907aa6e100",
+      "name": "Customer known? (pause)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "JbkN3T4Qea93RNPY"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ig_user_id",
+              "keyValue": "={{ $json.ig_user_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ig_user_id": "={{ $json.ig_user_id }}",
+            "paused_until": "={{ new Date(Date.now() + $(\"Parse owner command\").first().json.hours * 3600000).toISOString() }}",
+            "reason": "manual pause by owner"
+          },
+          "matchingColumns": [
+            "ig_user_id"
+          ]
+        },
+        "options": {}
+      },
+      "id": "7ff8ddb6-21b1-43b0-80e0-6b709996e071",
+      "name": "Pause customer",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Parse owner command\").first().json.chat_id }}",
+        "text": "=⏸ Bot paused for {{ $(\"Parse owner command\").first().json.user }} for {{ $(\"Parse owner command\").first().json.hours }} h. Use /resume {{ $(\"Parse owner command\").first().json.user }} to turn it back on.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "25330c69-57e8-4104-b5fb-56eb787af865",
+      "name": "Confirm customer paused",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1344,
+        576
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Parse owner command\").first().json.chat_id }}",
+        "text": "=Customer \"{{ $(\"Parse owner command\").first().json.user }}\" not found. The bot only knows customers who wrote after this feature was enabled. Check the username spelling.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "048dab35-8847-4782-9feb-d59d3bdfb8b8",
+      "name": "Customer not found (pause)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        768
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "t7PkfUtoPYsNYuu5"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "username",
+              "condition": "ilike",
+              "keyValue": "={{ $(\"Parse owner command\").first().json.user }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "1aeaba05-ffd2-4435-ab19-4b91468ab37b",
+      "name": "Find customer to resume",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        1056
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ig_user_id }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5fdc8308-ddc3-4db0-aaa8-b51803255a81",
+      "name": "Customer known? (resume)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        1056
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "JbkN3T4Qea93RNPY"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ig_user_id",
+              "keyValue": "={{ $json.ig_user_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "320d1864-1802-40fd-b15a-aa2e888c892c",
+      "name": "Remove pause row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Parse owner command\").first().json.chat_id }}",
+        "text": "=▶️ Bot resumed for {{ $(\"Parse owner command\").first().json.user }}.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "65994257-90ed-4a09-8e63-031736a8a8d2",
+      "name": "Confirm customer resumed",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1344,
+        960
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Parse owner command\").first().json.chat_id }}",
+        "text": "=Customer \"{{ $(\"Parse owner command\").first().json.user }}\" not found. Check the username spelling.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "2ad83489-4362-42ea-95a8-5ed5db309350",
+      "name": "Customer not found (resume)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        1152
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "JbkN3T4Qea93RNPY"
+        },
+        "returnAll": true
+      },
+      "id": "b1e68400-5475-4abc-b278-7d7ced7edebc",
+      "name": "Get paused rows",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        1344
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "t7PkfUtoPYsNYuu5"
+        },
+        "returnAll": true
+      },
+      "id": "0af250f9-08ec-42cf-b091-218b477407f8",
+      "name": "Get all customers",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        1344
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $('Get paused rows').all().map(i => i.json).filter(r => r.ig_user_id && r.paused_until && new Date(r.paused_until) > new Date());\nconst names = {};\nfor (const c of $input.all()) { if (c.json.ig_user_id) names[c.json.ig_user_id] = c.json.username; }\nlet text = 'No customers are paused.';\nif (rows.length) {\n  text = 'Paused customers:\\n' + rows.map(r => '- ' + (names[r.ig_user_id] || r.ig_user_id) + ' until ' + new Date(r.paused_until).toLocaleString('en-GB', { timeZone: 'Europe/Kiev' }) + ' (' + (r.reason || '') + ')').join('\\n');\n}\nreturn [{ json: { text, chat_id: $('Parse owner command').first().json.chat_id } }];"
+      },
+      "id": "c6892694-726c-4790-a13b-18a94b7c6dcf",
+      "name": "Build paused list",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        1344
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "4bb68704-2040-4dae-81cb-7c5d96222bd6",
+      "name": "Send paused list",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1344,
+        1344
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "WJbZxgU0QkuAQyLn"
+        },
+        "returnAll": true
+      },
+      "id": "c52412ba-5a0e-4113-b8c8-297f67a47a30",
+      "name": "Get all orders",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1104,
+        1296
+      ],
+      "alwaysOutputData": true,
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json).filter(r => r.order_id);\nconst clean = v => String(v == null ? '' : v).replace(/[<>&]/g, ' ');\nconst day = d => d ? new Date(d).toLocaleDateString('en-CA', { timeZone: 'Europe/Kiev' }) : '';\nconst today = day(new Date());\nconst line = r => '- ' + clean(r.order_id) + ' | ' + clean(r.model_name) + ' р.' + clean(r.size) + ' | ' + clean(r.price_uah) + ' грн | ' + clean(r.buyer_name) + ', ' + clean(r.city) + ' №' + clean(r.np_branch);\nconst pending = rows.filter(r => r.status === 'pending');\nconst confirmed = rows.filter(r => r.status === 'confirmed');\nconst todayCount = rows.filter(r => day(r.created_at) === today).length;\nlet text = 'Orders today: ' + todayCount + '\\n\\nWaiting for your decision (' + pending.length + '):\\n' + (pending.length ? pending.map(line).join('\\n') : '- none');\ntext += '\\n\\nConfirmed, not shipped (' + confirmed.length + '):\\n' + (confirmed.length ? confirmed.map(line).join('\\n') : '- none');\nif (confirmed.length) text += '\\n\\nShip with: /ship ORDER_ID TTN';\nreturn [{ json: { text, chat_id: $('Parse owner command').first().json.chat_id } }];"
+      },
+      "id": "b9f03a70-aca9-4db5-8c87-4aab8b797094",
+      "name": "Build orders summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "754200ba-22c7-478b-8656-ee69692ca744",
+      "name": "Send orders summary",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1584,
+        1296
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "nz6uzOwp47yueCeS"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "model_id",
+              "condition": "ilike",
+              "keyValue": "={{ $('Parse owner command').first().json.a1 }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "f27810ae-4fd7-400b-96c9-a0b806b1e21d",
+      "name": "Find model",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1104,
+        1600
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "m1",
+              "leftValue": "={{ $json.model_id }}",
+              "operator": {
+                "operation": "notEmpty",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "30be0b6e-c69c-4341-9516-90142eefb09b",
+      "name": "Model known?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const row = $('Find model').first().json;\nconst p = $('Parse owner command').first().json;\nconst col = 'size_' + p.a2;\nconst out = { model_id: row.model_id, model_name: row.name, size: p.a2, old_qty: row[col], new_qty: Number(p.a3) };\nfor (let s = 36; s <= 46; s++) {\n  const k = 'size_' + s;\n  const v = row[k];\n  out[k] = k === col ? Number(p.a3) : ((v === null || v === undefined) ? null : Number(v));\n}\nreturn [{ json: out }];"
+      },
+      "id": "6b60dbb2-6dee-4c66-9033-67f55a9fb62e",
+      "name": "Build new stock row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1584,
+        1536
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "nz6uzOwp47yueCeS"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "model_id",
+              "keyValue": "={{ $json.model_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "value": {
+            "size_36": "={{ $json.size_36 }}",
+            "size_37": "={{ $json.size_37 }}",
+            "size_38": "={{ $json.size_38 }}",
+            "size_39": "={{ $json.size_39 }}",
+            "size_40": "={{ $json.size_40 }}",
+            "size_41": "={{ $json.size_41 }}",
+            "size_42": "={{ $json.size_42 }}",
+            "size_43": "={{ $json.size_43 }}",
+            "size_44": "={{ $json.size_44 }}",
+            "size_45": "={{ $json.size_45 }}",
+            "size_46": "={{ $json.size_46 }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "b21465e5-410a-4331-bec5-80db3fd5f7c8",
+      "name": "Update stock",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1824,
+        1536
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Parse owner command').first().json.chat_id }}",
+        "text": "={{ '📦 ' + $('Build new stock row').first().json.model_id + ' ' + String($('Build new stock row').first().json.model_name).replace(/[<>&]/g, ' ') + ', size ' + $('Build new stock row').first().json.size + ': ' + ($('Build new stock row').first().json.old_qty ?? 'none') + ' → ' + $('Build new stock row').first().json.new_qty + ' pairs' }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "479dc131-2e74-488d-8a42-b751150ee874",
+      "name": "Confirm stock updated",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2064,
+        1536
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Parse owner command').first().json.chat_id }}",
+        "text": "={{ 'Model ' + String($('Parse owner command').first().json.a1).replace(/[<>&]/g, ' ') + ' not found in the catalog. Use the model id from the catalog (for example M01).' }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "0d9e9955-89e0-4ffd-8885-8448c8a8771c",
+      "name": "Model not found",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1584,
+        1696
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "WJbZxgU0QkuAQyLn"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "order_id",
+              "condition": "ilike",
+              "keyValue": "={{ $('Parse owner command').first().json.a1 }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "da71355e-0184-4500-8172-0cbccd841bff",
+      "name": "Find order to ship",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1104,
+        1904
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "o1",
+              "leftValue": "={{ $json.status }}",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "confirmed"
+            }
+          ],
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "aafd18e6-1620-4265-b948-070a33405375",
+      "name": "Order confirmed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        1904
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "WJbZxgU0QkuAQyLn"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "order_id",
+              "keyValue": "={{ $json.order_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "value": {
+            "status": "shipped",
+            "ttn": "={{ $('Parse owner command').first().json.a2 }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "4a3a748d-8b89-4fa3-9d55-46d9951108d5",
+      "name": "Mark order shipped",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1584,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v27.0/' + $('Get IG account').first().json.value + '/messages' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ recipient: { id: $('Find order to ship').first().json.ig_user_id }, message: { text: 'Ваше замовлення ' + $('Find order to ship').first().json.order_id + ' відправлено 🚚 Номер ТТН Нової пошти: ' + $('Parse owner command').first().json.a2 + '. Дякуємо за покупку!' } }) }}",
+        "options": {}
+      },
+      "id": "7e8e2c07-1746-4fbd-bbe1-de06ed1307e9",
+      "name": "DM buyer: shipped",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1824,
+        1840
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Instagram Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Parse owner command').first().json.chat_id }}",
+        "text": "={{ '🚚 Order ' + String($('Find order to ship').first().json.order_id).replace(/[<>&]/g, ' ') + ' marked as shipped, TTN ' + String($('Parse owner command').first().json.a2).replace(/[<>&]/g, ' ') + '. ' + ($json.error ? 'Could NOT message the buyer (Instagram 24h window?). Send the TTN to them manually.' : 'Buyer was notified in Instagram.') }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "c6e6d0b1-6339-441c-b0a7-05935951c8e2",
+      "name": "Confirm shipped",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2064,
+        1840
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Parse owner command').first().json.chat_id }}",
+        "text": "={{ 'Order ' + String($('Parse owner command').first().json.a1).replace(/[<>&]/g, ' ') + ' was not found or is not confirmed yet (only confirmed orders can be shipped). See /orders.' }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "3b08855a-457a-47b6-aad9-7de6ac0fca26",
+      "name": "Order not shippable",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1584,
+        2000
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "jQTafqjKvGXLfhuJ"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "owner_chat_id"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "4ec82ae2-97a0-49a6-bd60-5a55b0165c50",
+      "name": "Get owner chat",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "jQTafqjKvGXLfhuJ"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "ig_account_id"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "119a119d-749c-4eaf-9fe8-746b069671e3",
+      "name": "Get IG account",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        144,
+        624
+      ]
+    }
+  ],
+  "connections": {
+    "Parse owner command": {
+      "main": [
+        [
+          {
+            "node": "Which command?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Which command?": {
+      "main": [
+        [
+          {
+            "node": "Send menu",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set bot off",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set bot on",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find customer to pause",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find customer to resume",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get paused rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get all orders",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find model",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find order to ship",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set bot off": {
+      "main": [
+        [
+          {
+            "node": "Confirm bot off",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm bot off": {
+      "main": [
+        [
+          {
+            "node": "Answer button",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set bot on": {
+      "main": [
+        [
+          {
+            "node": "Confirm bot on",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm bot on": {
+      "main": [
+        [
+          {
+            "node": "Answer button",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find customer to pause": {
+      "main": [
+        [
+          {
+            "node": "Customer known? (pause)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer known? (pause)": {
+      "main": [
+        [
+          {
+            "node": "Pause customer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Customer not found (pause)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pause customer": {
+      "main": [
+        [
+          {
+            "node": "Confirm customer paused",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find customer to resume": {
+      "main": [
+        [
+          {
+            "node": "Customer known? (resume)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer known? (resume)": {
+      "main": [
+        [
+          {
+            "node": "Remove pause row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Customer not found (resume)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove pause row": {
+      "main": [
+        [
+          {
+            "node": "Confirm customer resumed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get paused rows": {
+      "main": [
+        [
+          {
+            "node": "Get all customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all customers": {
+      "main": [
+        [
+          {
+            "node": "Build paused list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build paused list": {
+      "main": [
+        [
+          {
+            "node": "Send paused list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all orders": {
+      "main": [
+        [
+          {
+            "node": "Build orders summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build orders summary": {
+      "main": [
+        [
+          {
+            "node": "Send orders summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find model": {
+      "main": [
+        [
+          {
+            "node": "Model known?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Model known?": {
+      "main": [
+        [
+          {
+            "node": "Build new stock row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Model not found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build new stock row": {
+      "main": [
+        [
+          {
+            "node": "Update stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update stock": {
+      "main": [
+        [
+          {
+            "node": "Confirm stock updated",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find order to ship": {
+      "main": [
+        [
+          {
+            "node": "Order confirmed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order confirmed?": {
+      "main": [
+        [
+          {
+            "node": "Mark order shipped",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Order not shippable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark order shipped": {
+      "main": [
+        [
+          {
+            "node": "DM buyer: shipped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DM buyer: shipped": {
+      "main": [
+        [
+          {
+            "node": "Confirm shipped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Owner update": {
+      "main": [
+        [
+          {
+            "node": "Get owner chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get owner chat": {
+      "main": [
+        [
+          {
+            "node": "Get IG account",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get IG account": {
+      "main": [
+        [
+          {
+            "node": "Parse owner command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "845a74b2-6f4e-45ab-9372-42b4efb35fa1",
+  "activeVersionId": null,
+  "versionCounter": 6,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-11-18T13:49:21.641Z",
+      "createdAt": "2026-11-18T13:49:21.641Z",
+      "role": "workflow:owner",
+      "workflowId": "xA4fcf6Dcf392R6W",
+      "projectId": "kP67zQab1RNBdvlR",
+      "project": {
+        "updatedAt": "2026-07-20T11:29:43.758Z",
+        "createdAt": "2026-07-20T10:53:39.065Z",
+        "id": "kP67zQab1RNBdvlR",
+        "name": "Taras Pul <REDACTED>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "dedbd7d1-138d-4875-9c0b-fe88232968f5"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Version 845a74b2",
+    "description": ""
+  }
+}

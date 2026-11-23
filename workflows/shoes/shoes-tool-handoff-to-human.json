@@ -1,0 +1,428 @@
+{
+  "updatedAt": "2026-11-21T14:31:06.096Z",
+  "createdAt": "2026-11-17T13:13:31.767Z",
+  "id": "Vlq1mngvArKqad7o",
+  "name": "Shoes - Tool - handoff to human",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "ig_user_id"
+            },
+            {
+              "name": "username"
+            },
+            {
+              "name": "reason"
+            }
+          ]
+        }
+      },
+      "id": "609add0d-1ff9-41b6-a578-67bfb327341d",
+      "name": "Handoff request",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -608,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "JbkN3T4Qea93RNPY",
+          "mode": "list",
+          "cachedResultName": "shoes handoff",
+          "cachedResultUrl": "/projects/kP67zQab1RNBdvlR/datatables/JbkN3T4Qea93RNPY"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ig_user_id",
+              "keyValue": "={{ $('Handoff request').first().json.ig_user_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ig_user_id": "={{ $('Handoff request').first().json.ig_user_id }}",
+            "paused_until": "={{ $now.plus({ hours: 12 }).toISO() }}",
+            "reason": "={{ $('Handoff request').first().json.reason }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ig_user_id",
+              "displayName": "ig_user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "paused_until",
+              "displayName": "paused_until",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "9bc75ede-0b29-4c71-a958-9d0da06cee5d",
+      "name": "Pause bot for customer",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Get owner chat').first().json.value }}",
+        "text": "=🚨 Потрібна людина\nКлієнт: @{{ String($('Handoff request').first().json.username).replace(/[<>&]/g, ' ') }} (ID {{ $('Handoff request').first().json.ig_user_id }})\nПричина: {{ String($('Handoff request').first().json.reason).replace(/[<>&]/g, ' ') }}\n\nБот мовчить для цього клієнта 12 годин. Щоб повернути бота раніше, натисніть кнопку нижче.",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "▶️ Повернути бота",
+                    "additionalFields": {
+                      "callback_data": "={{ 'resume|' + $('Handoff request').first().json.ig_user_id }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "6ad5e1a1-8613-4689-b83a-ef3f7638c907",
+      "name": "Notify owner",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        -48
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "ok",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "r2",
+              "name": "note",
+              "value": "Менеджера сповіщено. Скажи клієнту, що менеджер скоро відповість у цьому чаті.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0a95b04f-935c-466f-b4fe-b373144cebc0",
+      "name": "Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Get owner chat').first().json.value }}",
+        "text": "=Потрібна людина: клієнт ID {{ $('Handoff request').first().json.ig_user_id }}, бот для нього на паузі. Повне сповіщення не вдалося надіслати.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "594ed4b6-42ce-4e02-a9ca-192834e80329",
+      "name": "Owner alert fallback",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        -16
+      ],
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "id": "70b20733-257a-4c83-8a63-0790092bedf2",
+      "name": "Get owner chat",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -560,
+        -160
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "shoes settings",
+          "mode": "list",
+          "value": "jQTafqjKvGXLfhuJ"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "owner_chat_id"
+            }
+          ]
+        },
+        "limit": 1,
+        "matchType": "allConditions",
+        "operation": "get"
+      }
+    },
+    {
+      "id": "ebfb8868-6cd7-46bd-99d1-22d25556c0d0",
+      "name": "Handoff allowed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -420,
+        -160
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "guard1",
+              "leftValue": "={{ (() => { const r = String($('Handoff request').first().json.reason || '').toLowerCase(); const dataReason = /утепл|сезон|зим|характерист|матеріал|немає даних|немає інформац|недостатньо|не знайдено|не знайшов|не маю|каталог|немає в каталозі|підібрати/.test(r); const realReason = /(прос[иіт]|хоче|вимага|бажає|потребує).{0,30}(менеджер|людин|оператор|живого)|скарг|претенз|проблем.{0,20}замовлен|доставк|оплат|повернен|обмін|гарант|згод[аи]|погодився/.test(r); return !(dataReason && !realReason); })() }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "7941b9aa-8e5a-4c5e-a4c7-a8d171f0e0dd",
+      "name": "Handoff blocked",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -200,
+        60
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "ok",
+              "type": "boolean",
+              "value": false
+            },
+            {
+              "id": "b2",
+              "name": "note",
+              "type": "string",
+              "value": "ПЕРЕДАЧУ МЕНЕДЖЕРУ ВІДХИЛЕНО: це не причина для менеджера. Клієнту нічого про передачу НЕ кажи. Зроби так: викликай check_stock (наприклад, запит «на зиму» або бренд), запропонуй 2–3 моделі з результату, а для характеристик конкретної моделі використай веб-пошук. Уточни у клієнта стать, розмір, бренд або бюджет. Відповідь клієнту сам."
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Pause bot for customer": {
+      "main": [
+        [
+          {
+            "node": "Notify owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify owner": {
+      "main": [
+        [
+          {
+            "node": "Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Owner alert fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Owner alert fallback": {
+      "main": [
+        [
+          {
+            "node": "Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get owner chat": {
+      "main": [
+        [
+          {
+            "node": "Pause bot for customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handoff request": {
+      "main": [
+        [
+          {
+            "node": "Handoff allowed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handoff allowed?": {
+      "main": [
+        [
+          {
+            "node": "Get owner chat",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handoff blocked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "717JIPmKT6PouevB",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [
+    {
+      "id": "252994bb-2bd8-4509-afc4-a54f35a332df",
+      "name": "Pause bot and alert owner",
+      "nodeIds": [
+        "9bc75ede-0b29-4c71-a958-9d0da06cee5d",
+        "6ad5e1a1-8613-4689-b83a-ef3f7638c907"
+      ]
+    }
+  ],
+  "versionId": "c0e2a1a3-cc4a-42b5-9a48-2dfb7f5e493e",
+  "activeVersionId": "c0e2a1a3-cc4a-42b5-9a48-2dfb7f5e493e",
+  "versionCounter": 12,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-11-17T13:13:31.775Z",
+      "createdAt": "2026-11-17T13:13:31.775Z",
+      "role": "workflow:owner",
+      "workflowId": "Vlq1mngvArKqad7o",
+      "projectId": "kP67zQab1RNBdvlR",
+      "project": {
+        "updatedAt": "2026-07-20T11:29:43.758Z",
+        "createdAt": "2026-07-20T10:53:39.065Z",
+        "id": "kP67zQab1RNBdvlR",
+        "name": "Taras Pul <REDACTED>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "dedbd7d1-138d-4875-9c0b-fe88232968f5"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Guard: block handoff for product-data reasons",
+    "description": "Added nodes: Handoff allowed?, Handoff blocked\nConnections: 3 added, 1 removed"
+  }
+}

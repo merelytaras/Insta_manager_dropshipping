@@ -1,0 +1,246 @@
+{
+  "updatedAt": "2026-11-20T20:50:22.114Z",
+  "createdAt": "2026-11-20T20:40:12.531Z",
+  "id": "VbgYfCud2YasU2oB",
+  "name": "EasyDrop demo - Weekly owner report",
+  "description": "Every Monday 9:00 sends the shop owner a Telegram summary: customers, bot replies, photo searches, handoffs, orders.",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "382e00b6-aa38-4916-98da-0a29dc98419d",
+      "name": "Every Monday 9:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "0f168cff-4649-48d4-b477-52e80e5e8e6a",
+      "name": "Get chat log",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "2B06l4Xq0NTtxFdg"
+        },
+        "operation": "get",
+        "resource": "row",
+        "returnAll": true
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "c4325d29-50e6-4925-bad9-a9443c56af82",
+      "name": "Get orders",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "e5CQ1qnS6daMk9Kq"
+        },
+        "operation": "get",
+        "resource": "row",
+        "returnAll": true
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dbb50a4e-3d14-4537-a8e7-72308ab3c05a",
+      "name": "Get owner chat",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        300
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "jQTafqjKvGXLfhuJ"
+        },
+        "operation": "get",
+        "resource": "row",
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "owner_chat_id"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "a1273e3f-bebf-4859-ab0e-08144cf41bbf",
+      "name": "Build report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const since = Date.now() - 7 * 86400000;\nconst log = $('Get chat log').all().map(i => i.json).filter(r => r.ts && new Date(r.ts).getTime() >= since);\nconst ord = $('Get orders').all().map(i => i.json).filter(r => r.order_id && r.created_at && new Date(r.created_at).getTime() >= since);\nconst customers = new Set(log.filter(r => r.kind !== 'nudge').map(r => r.ig_user_id)).size;\nconst replies = log.filter(r => r.kind !== 'nudge').length;\nconst nudges = log.filter(r => r.kind === 'nudge').length;\nconst photos = log.filter(r => r.had_photo === 'yes').length;\nconst handoffs = log.filter(r => String(r.bot_reply || '').includes('передано менеджеру')).length;\nconst fallbacks = log.filter(r => r.kind === 'fallback').length;\nconst sum = ord.reduce((s, r) => s + (Number(r.price_uah) || 0), 0);\nconst byStatus = {};\nfor (const o of ord) { const s = o.status || 'невідомо'; byStatus[s] = (byStatus[s] || 0) + 1; }\nconst statusTxt = Object.keys(byStatus).length ? ' (' + Object.entries(byStatus).map(([k, v]) => k + ': ' + v).join(', ') + ')' : '';\nconst conv = customers ? Math.round(ord.length / customers * 100) : 0;\nconst text = '📊 Тижневий звіт бота (останні 7 днів)\\n\\n' +\n  'Клієнтів написало: ' + customers + '\\n' +\n  'Відповідей бота: ' + replies + '\\n' +\n  'Пошуків за фото: ' + photos + '\\n' +\n  'Передано менеджеру: ' + handoffs + '\\n' +\n  'Не змогли прочитати (допис/голосове/стікер): ' + fallbacks + '\\n' +\n  'Нагадувань тим, хто замовк: ' + nudges + '\\n' +\n  'Замовлень: ' + ord.length + statusTxt + (ord.length ? ' на суму ' + sum + ' грн' : '') + '\\n' +\n  'Із розмов у замовлення: ' + conv + '%';\nreturn [{ json: { text } }];"
+      }
+    },
+    {
+      "id": "a04ed7a4-5799-478c-9645-d20a315806e0",
+      "name": "Send report to owner",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1100,
+        300
+      ],
+      "parameters": {
+        "chatId": "={{ $('Get owner chat').first().json.value }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      },
+      "disabled": false
+    }
+  ],
+  "connections": {
+    "Every Monday 9:00": {
+      "main": [
+        [
+          {
+            "node": "Get chat log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get chat log": {
+      "main": [
+        [
+          {
+            "node": "Get orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get orders": {
+      "main": [
+        [
+          {
+            "node": "Get owner chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get owner chat": {
+      "main": [
+        [
+          {
+            "node": "Build report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build report": {
+      "main": [
+        [
+          {
+            "node": "Send report to owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "Europe/Kyiv"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "ea5a6b24-7ede-43f6-a883-fb6ac2e13406",
+  "activeVersionId": "ea5a6b24-7ede-43f6-a883-fb6ac2e13406",
+  "versionCounter": 4,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-11-20T20:40:12.542Z",
+      "createdAt": "2026-11-20T20:40:12.542Z",
+      "role": "workflow:owner",
+      "workflowId": "VbgYfCud2YasU2oB",
+      "projectId": "kP67zQab1RNBdvlR",
+      "project": {
+        "updatedAt": "2026-07-20T11:29:43.758Z",
+        "createdAt": "2026-07-20T10:53:39.065Z",
+        "id": "kP67zQab1RNBdvlR",
+        "name": "Taras Pul <REDACTED>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "dedbd7d1-138d-4875-9c0b-fe88232968f5"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Count nudges separately",
+    "description": "Updated nodes: Build report"
+  }
+}
