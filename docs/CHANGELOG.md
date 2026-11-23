@@ -14,3 +14,4 @@
 
 - Webhook investigation: subscription OK, Test button OK, real DM events not delivered (see NOTES). Business verification (needs legal entity/ФОП) blocks App Review for now.
 - Webhook test 2 (Development mode) also failed to deliver real DM events.
+- Webhook test 3 (toggle reset) failed too; stopped. Revisit after getting a legal entity + App Review.
