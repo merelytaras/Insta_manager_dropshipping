@@ -15,3 +15,6 @@
 - Webhook investigation: subscription OK, Test button OK, real DM events not delivered (see NOTES). Business verification (needs legal entity/ФОП) blocks App Review for now.
 - Webhook test 2 (Development mode) also failed to deliver real DM events.
 - Webhook test 3 (toggle reset) failed too; stopped. Revisit after getting a legal entity + App Review.
+
+## 2026-11-24 (night)
+- Catalog adapter tested 4 times, no success (slow, ~324 MB run data). Findings in docs/CATALOG_ADAPTER.md. Parked by the user. Old sync still needs republishing.
